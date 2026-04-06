@@ -1,47 +1,35 @@
 import { describe, it, expect } from "vitest";
-import { createRoomCatalog, type RoomCatalogEntry } from "./roomCatalog";
-import { PluginRegistry } from "@diorama/engine";
-import { councilChamberPlugin } from "@diorama/plugins/rooms/councilChamber";
-import { testLabPlugin } from "@diorama/plugins/rooms/testLab";
+import { createRoomCatalog } from "./roomCatalog";
 
 describe("createRoomCatalog", () => {
-  it("returns catalog entries from registered room plugins", () => {
-    const registry = new PluginRegistry();
-    registry.register(councilChamberPlugin);
-    registry.register(testLabPlugin);
-
-    const catalog = createRoomCatalog(registry);
-    expect(catalog).toHaveLength(2);
+  it("returns 5 preset entries", () => {
+    const catalog = createRoomCatalog();
+    expect(catalog).toHaveLength(5);
   });
 
-  it("each entry has type, label, icon, description, defaultSize", () => {
-    const registry = new PluginRegistry();
-    registry.register(councilChamberPlugin);
-
-    const catalog = createRoomCatalog(registry);
-    const entry = catalog[0];
-    expect(entry.type).toBe("council-chamber");
-    expect(entry.icon).toBe("shield");
-    expect(entry.description).toBeTruthy();
-    expect(entry.defaultSize).toEqual([3, 3]);
+  it("each entry has preset, label, defaultSize", () => {
+    const catalog = createRoomCatalog();
+    for (const entry of catalog) {
+      expect(entry.preset).toBeTruthy();
+      expect(entry.label).toBeTruthy();
+      expect(entry.defaultSize[0]).toBeGreaterThan(0);
+      expect(entry.defaultSize[1]).toBeGreaterThan(0);
+    }
   });
 
-  it("returns empty array when no room plugins registered", () => {
-    const registry = new PluginRegistry();
-    const catalog = createRoomCatalog(registry);
-    expect(catalog).toEqual([]);
+  it("includes meeting preset", () => {
+    const catalog = createRoomCatalog();
+    const meeting = catalog.find((e) => e.preset === "meeting");
+    expect(meeting).toBeDefined();
+    expect(meeting!.label).toBe("Meeting Room");
   });
 
   it("filters catalog by search query", () => {
-    const registry = new PluginRegistry();
-    registry.register(councilChamberPlugin);
-    registry.register(testLabPlugin);
-
-    const catalog = createRoomCatalog(registry);
+    const catalog = createRoomCatalog();
     const filtered = catalog.filter((e) =>
-      e.type.includes("council") || e.description.toLowerCase().includes("council")
+      e.preset.includes("work") || e.label.toLowerCase().includes("work"),
     );
     expect(filtered).toHaveLength(1);
-    expect(filtered[0].type).toBe("council-chamber");
+    expect(filtered[0].preset).toBe("workspace");
   });
 });

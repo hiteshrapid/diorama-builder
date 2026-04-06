@@ -13,7 +13,7 @@ describe("addPluginToConfig", () => {
     gateway: { url: "ws://localhost:4040" },
     view: "3d-office",
     theme: "neon-dark",
-    rooms: [{ type: "bullpen", position: [0, 0], size: [3, 2], label: "Floor" }],
+    rooms: [{ preset: "workspace", position: [0, 0], size: [3, 2], label: "Floor" }],
     agents: {},
   };
 
@@ -29,34 +29,34 @@ describe("addPluginToConfig", () => {
 
   it("adds a new room to the config", () => {
     addPluginToConfig(configPath, {
-      type: "greenhouse",
+      preset: "social",
       position: [3, 0],
       size: [2, 2],
-      label: "Greenhouse",
+      label: "Lounge",
     });
     const config = JSON.parse(fs.readFileSync(configPath, "utf-8"));
     expect(config.rooms).toHaveLength(2);
-    expect(config.rooms[1].type).toBe("greenhouse");
+    expect(config.rooms[1].preset).toBe("social");
   });
 
   it("preserves existing rooms when adding", () => {
     addPluginToConfig(configPath, {
-      type: "test-lab",
+      preset: "lab",
       position: [3, 0],
-      size: [2, 3],
-      label: "QA Lab",
+      size: [4, 4],
+      label: "Lab",
     });
     const config = JSON.parse(fs.readFileSync(configPath, "utf-8"));
-    expect(config.rooms[0].type).toBe("bullpen");
-    expect(config.rooms[1].type).toBe("test-lab");
+    expect(config.rooms[0].preset).toBe("workspace");
+    expect(config.rooms[1].preset).toBe("lab");
   });
 
   it("preserves all other config fields", () => {
     addPluginToConfig(configPath, {
-      type: "archive",
+      preset: "private",
       position: [0, 2],
-      size: [3, 2],
-      label: "Archive",
+      size: [2, 2],
+      label: "Private",
     });
     const config = JSON.parse(fs.readFileSync(configPath, "utf-8"));
     expect(config.name).toBe("test");
@@ -68,7 +68,7 @@ describe("addPluginToConfig", () => {
     const badPath = path.join(tmpDir, "nonexistent.json");
     expect(() =>
       addPluginToConfig(badPath, {
-        type: "test-lab",
+        preset: "lab",
         position: [0, 0],
         size: [2, 2],
         label: "Lab",

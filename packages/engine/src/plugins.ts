@@ -6,7 +6,7 @@ export interface BasePlugin {
 export interface RoomPlugin extends BasePlugin {
   kind: "room";
   defaultSize: [number, number];
-  reducer: (state: unknown, event: unknown) => unknown;
+  reducer: (state: unknown, event: import("./eventBus").DioramaEvent) => unknown;
   catalog: { icon: string; description: string };
 }
 

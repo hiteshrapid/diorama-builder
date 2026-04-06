@@ -1,0 +1,26 @@
+{
+  "name": "@diorama/app",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build"
+  },
+  "dependencies": {
+    "next": "^15.3.1",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "@react-three/fiber": "^9.1.2",
+    "@react-three/drei": "^10.7.7",
+    "three": "^0.175.0",
+    "@diorama/engine": "*",
+    "@diorama/plugins": "*",
+    "@diorama/ui": "*"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "@types/three": "^0.175.0"
+  }
+}

@@ -9,7 +9,7 @@ describe("parseConfig", () => {
     theme: "neon-dark",
     rooms: [
       {
-        type: "council-chamber",
+        preset: "meeting",
         position: [0, 0],
         size: [3, 3],
         label: "Strategy Room",
@@ -22,7 +22,7 @@ describe("parseConfig", () => {
     const result = parseConfig(validConfig);
     expect(result.name).toBe("Test Office");
     expect(result.rooms).toHaveLength(1);
-    expect(result.rooms[0].type).toBe("council-chamber");
+    expect(result.rooms[0].preset).toBe("meeting");
   });
 
   it("rejects config missing required 'name' field", () => {
@@ -35,7 +35,7 @@ describe("parseConfig", () => {
     expect(() => parseConfig(noGateway)).toThrow(DioramaConfigError);
   });
 
-  it("rejects config with invalid room missing 'type'", () => {
+  it("rejects config with invalid room missing 'preset'", () => {
     const config = {
       ...validConfig,
       rooms: [{ position: [0, 0], size: [2, 2], label: "Bad Room" }],
@@ -46,7 +46,7 @@ describe("parseConfig", () => {
   it("rejects config with invalid room position (non-array)", () => {
     const config = {
       ...validConfig,
-      rooms: [{ type: "bullpen", position: "bad", size: [2, 2], label: "X" }],
+      rooms: [{ preset: "workspace", position: "bad", size: [2, 2], label: "X" }],
     };
     expect(() => parseConfig(config)).toThrow(DioramaConfigError);
   });
@@ -115,9 +115,9 @@ describe("parseConfig", () => {
     const config = {
       ...validConfig,
       rooms: [
-        { type: "council-chamber", position: [0, 0], size: [3, 3], label: "A" },
-        { type: "test-lab", position: [3, 0], size: [2, 3], label: "B" },
-        { type: "bullpen", position: [0, 3], size: [5, 2], label: "C" },
+        { preset: "meeting", position: [0, 0], size: [3, 3], label: "A" },
+        { preset: "lab", position: [3, 0], size: [2, 3], label: "B" },
+        { preset: "workspace", position: [0, 3], size: [5, 2], label: "C" },
       ],
     };
     const result = parseConfig(config);

@@ -1,6 +1,6 @@
 export interface RoomPlacement {
   id: string;
-  type: string;
+  preset: string;
   position: [number, number];
   size: [number, number];
   label: string;

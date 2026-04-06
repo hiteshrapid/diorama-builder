@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 const RoomSchema = z.object({
-  type: z.string(),
+  preset: z.string(),
   position: z.tuple([z.number(), z.number()]),
   size: z.tuple([z.number(), z.number()]),
   label: z.string(),

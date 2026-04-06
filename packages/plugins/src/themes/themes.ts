@@ -18,6 +18,12 @@ export const minimalTheme: ThemePlugin = {
   colors: { background: "#f5f5f5", accent: "#666666" },
 };
 
+export const cyberpunkTheme: ThemePlugin = {
+  kind: "theme",
+  type: "cyberpunk",
+  colors: { background: "#0a0012", accent: "#ff2d95" },
+};
+
 export function applyTheme(config: SceneConfig, theme: ThemePlugin): SceneConfig {
   return {
     ...config,

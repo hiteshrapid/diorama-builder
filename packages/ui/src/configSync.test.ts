@@ -6,7 +6,6 @@ import {
   loadBuilderStateFromConfig,
   saveBuilderStateToConfig,
 } from "./configSync";
-import type { BuilderState } from "./builderStore";
 import { createBuilderState } from "./builderStore";
 
 describe("configSync", () => {
@@ -19,8 +18,8 @@ describe("configSync", () => {
     view: "3d-office",
     theme: "neon-dark",
     rooms: [
-      { type: "bullpen", position: [0, 0], size: [3, 2], label: "Floor" },
-      { type: "test-lab", position: [3, 0], size: [2, 3], label: "Lab" },
+      { preset: "workspace", position: [0, 0], size: [5, 4], label: "Floor" },
+      { preset: "lab", position: [5, 0], size: [4, 4], label: "Lab" },
     ],
     agents: { "aegis-prime": { desk: "desk-1", color: "#6366f1" } },
   };
@@ -38,9 +37,9 @@ describe("configSync", () => {
   it("loads rooms from config into builder state", () => {
     const state = loadBuilderStateFromConfig(configPath);
     expect(state.rooms).toHaveLength(2);
-    expect(state.rooms[0].type).toBe("bullpen");
+    expect(state.rooms[0].preset).toBe("workspace");
     expect(state.rooms[0].position).toEqual([0, 0]);
-    expect(state.rooms[1].type).toBe("test-lab");
+    expect(state.rooms[1].preset).toBe("lab");
   });
 
   it("generates unique IDs for loaded rooms", () => {
@@ -51,20 +50,20 @@ describe("configSync", () => {
 
   it("saves builder state back to config file", () => {
     const state = createBuilderState([
-      { id: "r1", type: "archive", position: [0, 0], size: [4, 2], label: "Archive" },
-      { id: "r2", type: "breakroom", position: [4, 0], size: [2, 2], label: "Break" },
+      { id: "r1", preset: "meeting", position: [0, 0], size: [4, 3], label: "Meeting" },
+      { id: "r2", preset: "social", position: [4, 0], size: [3, 3], label: "Lounge" },
     ]);
     saveBuilderStateToConfig(configPath, state);
 
     const config = JSON.parse(fs.readFileSync(configPath, "utf-8"));
     expect(config.rooms).toHaveLength(2);
-    expect(config.rooms[0].type).toBe("archive");
-    expect(config.rooms[1].type).toBe("breakroom");
+    expect(config.rooms[0].preset).toBe("meeting");
+    expect(config.rooms[1].preset).toBe("social");
   });
 
   it("preserves non-room config fields on save", () => {
     const state = createBuilderState([
-      { id: "r1", type: "bullpen", position: [0, 0], size: [3, 2], label: "Floor" },
+      { id: "r1", preset: "workspace", position: [0, 0], size: [5, 4], label: "Floor" },
     ]);
     saveBuilderStateToConfig(configPath, state);
 
@@ -80,7 +79,7 @@ describe("configSync", () => {
     saveBuilderStateToConfig(configPath, loaded);
     const config = JSON.parse(fs.readFileSync(configPath, "utf-8"));
     expect(config.rooms).toHaveLength(2);
-    expect(config.rooms[0].type).toBe("bullpen");
-    expect(config.rooms[1].type).toBe("test-lab");
+    expect(config.rooms[0].preset).toBe("workspace");
+    expect(config.rooms[1].preset).toBe("lab");
   });
 });

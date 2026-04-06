@@ -1,14 +1,7 @@
-// Room plugins
-export { councilChamberPlugin, createCouncilState } from "./rooms/councilChamber";
-export { testLabPlugin, createTestLabState } from "./rooms/testLab";
-export { receptionPlugin, createReceptionState } from "./rooms/reception";
-export { commsHubPlugin, createCommsHubState } from "./rooms/commsHub";
-export { bullpenPlugin, createBullpenState } from "./rooms/bullpen";
-export { archivePlugin, createArchiveState } from "./rooms/archive";
-export { breakroomPlugin, createBreakroomState } from "./rooms/breakroom";
-
 // Source plugins
 export { mockDataPlugin, createMockEventStream } from "./sources/mockData";
+export { OpenClawGatewayClient } from "./sources/openclawGateway";
+export type { GatewayClientOptions, GatewayConnectionState } from "./sources/openclawGateway";
 
 // Theme plugins
-export { neonDarkTheme, warmOfficeTheme, minimalTheme, applyTheme } from "./themes/themes";
+export { neonDarkTheme, warmOfficeTheme, minimalTheme, cyberpunkTheme, applyTheme } from "./themes/themes";

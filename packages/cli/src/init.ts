@@ -12,29 +12,27 @@ const TEMPLATES: Record<string, object> = {
     view: "3d-office",
     theme: "neon-dark",
     rooms: [
-      { type: "council-chamber", position: [0, 0], size: [3, 3], label: "Strategy Room" },
-      { type: "test-lab", position: [3, 0], size: [2, 3], label: "QA Lab" },
-      { type: "bullpen", position: [0, 3], size: [5, 2], label: "Agent Floor" },
+      { preset: "meeting", position: [0, 0], size: [4, 3], label: "Strategy Room" },
+      { preset: "workspace", position: [4, 0], size: [5, 4], label: "Workspace" },
+      { preset: "lab", position: [0, 3], size: [4, 4], label: "Lab" },
     ],
   },
   "full-office": {
     view: "3d-office",
     theme: "neon-dark",
     rooms: [
-      { type: "archive", position: [0, 0], size: [4, 2], label: "Knowledge Garden" },
-      { type: "comms-hub", position: [4, 0], size: [2, 2], label: "Comms Hub" },
-      { type: "bullpen", position: [0, 2], size: [4, 2], label: "Agent Bullpen" },
-      { type: "breakroom", position: [4, 2], size: [2, 2], label: "Breakroom" },
-      { type: "reception", position: [0, 4], size: [2, 3], label: "Reception" },
-      { type: "council-chamber", position: [2, 4], size: [2, 3], label: "Council Chamber" },
-      { type: "test-lab", position: [4, 4], size: [2, 3], label: "Test Lab" },
+      { preset: "meeting", position: [0, 0], size: [4, 3], label: "Meeting Room" },
+      { preset: "workspace", position: [4, 0], size: [5, 4], label: "Workspace" },
+      { preset: "private", position: [9, 0], size: [2, 2], label: "Private Office" },
+      { preset: "social", position: [0, 3], size: [3, 3], label: "Social Lounge" },
+      { preset: "lab", position: [3, 4], size: [4, 4], label: "Lab" },
     ],
   },
   minimal: {
     view: "dashboard",
     theme: "minimal",
     rooms: [
-      { type: "bullpen", position: [0, 0], size: [4, 3], label: "Agent Floor" },
+      { preset: "workspace", position: [0, 0], size: [5, 4], label: "General" },
     ],
   },
 };

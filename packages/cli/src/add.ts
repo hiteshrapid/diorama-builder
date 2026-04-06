@@ -1,7 +1,7 @@
 import fs from "fs";
 
 export interface RoomEntry {
-  type: string;
+  preset: string;
   position: [number, number];
   size: [number, number];
   label: string;

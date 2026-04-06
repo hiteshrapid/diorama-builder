@@ -6,8 +6,8 @@ import {
   type RoomPlacement,
 } from "./builderStore";
 
-function room(type: string, x: number, y: number, w = 2, h = 2): RoomPlacement {
-  return { id: `${type}-${x}-${y}`, type, position: [x, y], size: [w, h], label: type };
+function room(preset: string, x: number, y: number, w = 2, h = 2): RoomPlacement {
+  return { id: `${preset}-${x}-${y}`, preset, position: [x, y], size: [w, h], label: preset };
 }
 
 describe("createBuilderState", () => {
@@ -20,7 +20,7 @@ describe("createBuilderState", () => {
   });
 
   it("accepts initial rooms", () => {
-    const state = createBuilderState([room("bullpen", 0, 0)]);
+    const state = createBuilderState([room("workspace", 0, 0)]);
     expect(state.rooms).toHaveLength(1);
   });
 });
@@ -30,17 +30,17 @@ describe("builderReducer", () => {
     const state = createBuilderState();
     const next = builderReducer(state, {
       type: "ADD_ROOM",
-      room: room("council-chamber", 0, 0, 3, 3),
+      room: room("meeting", 0, 0, 3, 3),
     });
     expect(next.rooms).toHaveLength(1);
-    expect(next.rooms[0].type).toBe("council-chamber");
+    expect(next.rooms[0].preset).toBe("meeting");
   });
 
   it("records history on add (enables undo)", () => {
     const state = createBuilderState();
     const next = builderReducer(state, {
       type: "ADD_ROOM",
-      room: room("bullpen", 0, 0),
+      room: room("workspace", 0, 0),
     });
     expect(next.history.past).toHaveLength(1);
     expect(next.history.future).toEqual([]);

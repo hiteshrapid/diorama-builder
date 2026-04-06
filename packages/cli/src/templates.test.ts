@@ -64,6 +64,7 @@ describe("template validation", () => {
     const raw = JSON.parse(fs.readFileSync(path.join(TEMPLATES_DIR, "minimal/diorama.config.json"), "utf-8"));
     const config = parseConfig(raw);
     expect(config.rooms).toHaveLength(1);
+    expect(config.rooms[0].preset).toBe("workspace");
     expect(config.view).toBe("dashboard");
   });
 });

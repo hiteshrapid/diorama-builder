@@ -3,6 +3,7 @@ import {
   neonDarkTheme,
   warmOfficeTheme,
   minimalTheme,
+  cyberpunkTheme,
   applyTheme,
 } from "./themes";
 import { createSceneConfig } from "@diorama/engine";
@@ -23,6 +24,13 @@ describe("theme plugins", () => {
   it("minimal has correct metadata", () => {
     expect(minimalTheme.kind).toBe("theme");
     expect(minimalTheme.type).toBe("minimal");
+  });
+
+  it("cyberpunk has correct metadata", () => {
+    expect(cyberpunkTheme.kind).toBe("theme");
+    expect(cyberpunkTheme.type).toBe("cyberpunk");
+    expect(cyberpunkTheme.colors.background).toBeTruthy();
+    expect(cyberpunkTheme.colors.accent).toBeTruthy();
   });
 });
 

@@ -1,0 +1,67 @@
+"use client";
+
+import { useRef } from "react";
+import { useFrame } from "@react-three/fiber";
+import { computeIdlePose, type AgentState } from "@diorama/engine";
+import type { Group } from "three";
+
+interface AgentFigure3DProps {
+  state: AgentState;
+  color: string;
+  label: string;
+  phase?: number;
+}
+
+export function AgentFigure3D({ state, color, label, phase = 0 }: AgentFigure3DProps) {
+  const groupRef = useRef<Group>(null);
+  const bodyRef = useRef<Group>(null);
+
+  useFrame(({ clock }) => {
+    if (!groupRef.current) return;
+
+    // Position from agent state
+    groupRef.current.position.set(state.x, 0, state.z);
+    groupRef.current.rotation.y = state.facing;
+
+    // Idle animation
+    if (state.mode === "idle" || state.mode === "seated") {
+      const pose = computeIdlePose(clock.getElapsedTime(), phase);
+      if (bodyRef.current) {
+        bodyRef.current.position.x = pose.bodySwayX;
+        bodyRef.current.position.z = pose.bodySwayZ;
+        bodyRef.current.rotation.x = pose.torsoLean;
+        bodyRef.current.rotation.y = pose.chairTurn;
+      }
+    }
+  });
+
+  const yOffset = state.mode === "seated" ? 0.3 : 0;
+
+  return (
+    <group ref={groupRef}>
+      <group ref={bodyRef} position={[0, yOffset, 0]}>
+        {/* Body - capsule shape */}
+        <mesh position={[0, 0.7, 0]}>
+          <capsuleGeometry args={[0.15, 0.5, 8, 16]} />
+          <meshStandardMaterial color={color} />
+        </mesh>
+
+        {/* Head */}
+        <mesh position={[0, 1.15, 0]}>
+          <sphereGeometry args={[0.12, 16, 16]} />
+          <meshStandardMaterial color={color} />
+        </mesh>
+
+        {/* Badge glow */}
+        <mesh position={[0, 0.9, 0.16]}>
+          <sphereGeometry args={[0.04, 8, 8]} />
+          <meshStandardMaterial
+            color={color}
+            emissive={color}
+            emissiveIntensity={1}
+          />
+        </mesh>
+      </group>
+    </group>
+  );
+}

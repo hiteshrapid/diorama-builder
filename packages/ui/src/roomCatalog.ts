@@ -1,17 +1,15 @@
-import type { PluginRegistry } from "@diorama/engine";
+import { ROOM_PRESETS, type RoomPreset } from "@diorama/engine";
 
 export interface RoomCatalogEntry {
-  type: string;
-  icon: string;
-  description: string;
+  preset: string;
+  label: string;
   defaultSize: [number, number];
 }
 
-export function createRoomCatalog(registry: PluginRegistry): RoomCatalogEntry[] {
-  return registry.getRoomPlugins().map((p) => ({
-    type: p.type,
-    icon: p.catalog.icon,
-    description: p.catalog.description,
+export function createRoomCatalog(): RoomCatalogEntry[] {
+  return ROOM_PRESETS.map((p) => ({
+    preset: p.id,
+    label: p.label,
     defaultSize: p.defaultSize,
   }));
 }

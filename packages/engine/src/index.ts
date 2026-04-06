@@ -46,3 +46,11 @@ export type { AgentState, AgentMode, AgentAction, IdlePose } from "./agentState"
 // Scene Config
 export { createSceneConfig, mergeSceneConfig } from "./sceneConfig";
 export type { SceneConfig, CameraConfig, LightConfig, FogConfig } from "./sceneConfig";
+
+// Auto Layout
+export { generateAutoLayout, findNextPosition } from "./autoLayout";
+export type { AutoLayoutResult } from "./autoLayout";
+
+// Room Presets
+export { ROOM_PRESETS, getPreset, getFurniture } from "./roomPresets";
+export type { RoomPreset, FurnitureItem, ThemeId } from "./roomPresets";

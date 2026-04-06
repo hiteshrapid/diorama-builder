@@ -4,9 +4,9 @@
   "view": "3d-office",
   "theme": "neon-dark",
   "rooms": [
-    { "type": "council-chamber", "position": [0, 0], "size": [3, 3], "label": "Strategy Room" },
-    { "type": "test-lab", "position": [3, 0], "size": [2, 3], "label": "QA Lab" },
-    { "type": "bullpen", "position": [0, 3], "size": [5, 2], "label": "Agent Floor" }
+    { "preset": "meeting", "position": [0, 0], "size": [4, 3], "label": "Strategy Room" },
+    { "preset": "workspace", "position": [4, 0], "size": [5, 4], "label": "Workspace" },
+    { "preset": "lab", "position": [0, 3], "size": [4, 4], "label": "Lab" }
   ],
   "agents": {}
 }

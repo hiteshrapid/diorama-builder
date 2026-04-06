@@ -13,6 +13,7 @@ export default defineConfig({
       "@diorama/plugins": path.resolve(__dirname, "packages/plugins/src"),
       "@diorama/cli": path.resolve(__dirname, "packages/cli/src"),
       "@diorama/ui": path.resolve(__dirname, "packages/ui/src"),
+      "@diorama/app": path.resolve(__dirname, "packages/app"),
     },
   },
 });
