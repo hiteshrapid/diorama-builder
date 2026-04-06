@@ -1,0 +1,10 @@
+{
+  "name": "minimal-office",
+  "gateway": { "url": "ws://localhost:4040", "token": "$OPENCLAW_TOKEN" },
+  "view": "dashboard",
+  "theme": "minimal",
+  "rooms": [
+    { "type": "bullpen", "position": [0, 0], "size": [4, 3], "label": "Agent Floor" }
+  ],
+  "agents": {}
+}

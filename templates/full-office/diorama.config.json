@@ -1,0 +1,16 @@
+{
+  "name": "full-office",
+  "gateway": { "url": "ws://localhost:4040", "token": "$OPENCLAW_TOKEN" },
+  "view": "3d-office",
+  "theme": "neon-dark",
+  "rooms": [
+    { "type": "archive", "position": [0, 0], "size": [4, 2], "label": "Knowledge Garden" },
+    { "type": "comms-hub", "position": [4, 0], "size": [2, 2], "label": "Comms Hub" },
+    { "type": "bullpen", "position": [0, 2], "size": [4, 2], "label": "Agent Bullpen" },
+    { "type": "breakroom", "position": [4, 2], "size": [2, 2], "label": "Breakroom" },
+    { "type": "reception", "position": [0, 4], "size": [2, 3], "label": "Reception" },
+    { "type": "council-chamber", "position": [2, 4], "size": [2, 3], "label": "Council Chamber" },
+    { "type": "test-lab", "position": [4, 4], "size": [2, 3], "label": "Test Lab" }
+  ],
+  "agents": {}
+}
