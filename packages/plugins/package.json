@@ -9,6 +9,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@diorama/engine": "*"
+    "@diorama/engine": "*",
+    "ws": "^8.20.0"
   }
 }
