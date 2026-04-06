@@ -1,0 +1,21 @@
+{
+  "name": "diorama",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Configurable 3D workspace visualizer for OpenClaw",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --build",
+    "lint": "eslint packages/",
+    "build": "npm run build --workspaces"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "vitest": "^3.1.0",
+    "eslint": "^9.0.0"
+  }
+}
