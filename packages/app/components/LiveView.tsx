@@ -131,7 +131,7 @@ export function LiveView({ config, onSelectRoom, selectedRoom }: LiveViewProps) 
             themeId={config.theme}
             selected={selectedRoom === room.label}
             glowIntensity={roomGlows[i] ?? 0}
-            onClick={() => onSelectRoom?.(room.label === selectedRoom ? null : room.label)}
+            onPointerUp={() => onSelectRoom?.(room.label === selectedRoom ? null : room.label)}
           />
         ))}
         {agentStates.map((agent, i) => (

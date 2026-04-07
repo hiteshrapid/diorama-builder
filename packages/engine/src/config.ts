@@ -1,10 +1,31 @@
 import { z } from "zod";
 
+const FurnitureItemSchema = z.object({
+  geometry: z.enum(["box", "cylinder", "sphere", "plane"]),
+  size: z.tuple([z.number(), z.number(), z.number()]),
+  position: z.tuple([z.number(), z.number(), z.number()]),
+  rotation: z.tuple([z.number(), z.number(), z.number()]).optional(),
+  material: z.object({
+    color: z.string(),
+    emissive: z.string().optional(),
+    wireframe: z.boolean().optional(),
+    opacity: z.number().optional(),
+  }),
+});
+
+const RoomColorsSchema = z.object({
+  accent: z.string().optional(),
+  floor: z.string().optional(),
+  wall: z.string().optional(),
+});
+
 const RoomSchema = z.object({
   preset: z.string(),
   position: z.tuple([z.number(), z.number()]),
   size: z.tuple([z.number(), z.number()]),
   label: z.string(),
+  colors: RoomColorsSchema.optional(),
+  furniture: z.array(FurnitureItemSchema).optional(),
 });
 
 const AgentAssignmentSchema = z.object({
@@ -28,6 +49,7 @@ const DioramaConfigSchema = z.object({
 
 export type DioramaConfig = z.infer<typeof DioramaConfigSchema>;
 export type RoomConfig = z.infer<typeof RoomSchema>;
+export type RoomColors = z.infer<typeof RoomColorsSchema>;
 export type AgentAssignment = z.infer<typeof AgentAssignmentSchema>;
 
 export class DioramaConfigError extends Error {

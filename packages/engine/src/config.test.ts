@@ -123,4 +123,64 @@ describe("parseConfig", () => {
     const result = parseConfig(config);
     expect(result.rooms).toHaveLength(3);
   });
+
+  it("parses room with colors field", () => {
+    const config = {
+      ...validConfig,
+      rooms: [
+        {
+          preset: "meeting",
+          position: [0, 0],
+          size: [3, 3],
+          label: "Colored Room",
+          colors: { accent: "#ff0000", floor: "#00ff00", wall: "#0000ff" },
+        },
+      ],
+    };
+    const result = parseConfig(config);
+    expect(result.rooms[0].colors).toEqual({
+      accent: "#ff0000",
+      floor: "#00ff00",
+      wall: "#0000ff",
+    });
+  });
+
+  it("parses room with furniture field", () => {
+    const config = {
+      ...validConfig,
+      rooms: [
+        {
+          preset: "workspace",
+          position: [0, 0],
+          size: [4, 4],
+          label: "Furnished Room",
+          furniture: [
+            {
+              geometry: "box",
+              size: [1.2, 0.08, 0.6],
+              position: [0, 0.75, 0],
+              material: { color: "#1a2a40", emissive: "#8090c0" },
+            },
+            {
+              geometry: "cylinder",
+              size: [0.2, 0.7, 0.2],
+              position: [0, 0.35, -0.5],
+              rotation: [0, 1.57, 0],
+              material: { color: "#333", wireframe: true, opacity: 0.8 },
+            },
+          ],
+        },
+      ],
+    };
+    const result = parseConfig(config);
+    expect(result.rooms[0].furniture).toHaveLength(2);
+    expect(result.rooms[0].furniture![0].geometry).toBe("box");
+    expect(result.rooms[0].furniture![1].rotation).toEqual([0, 1.57, 0]);
+  });
+
+  it("still parses rooms without colors or furniture (backward compat)", () => {
+    const result = parseConfig(validConfig);
+    expect(result.rooms[0].colors).toBeUndefined();
+    expect(result.rooms[0].furniture).toBeUndefined();
+  });
 });

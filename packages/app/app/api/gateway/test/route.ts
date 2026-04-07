@@ -7,9 +7,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, error: "Gateway URL is required" }, { status: 400 });
     }
 
-    // Dynamic import to avoid bundling ws for the client
     const { OpenClawGatewayClient } = await import("@diorama/plugins");
-
     const client = new OpenClawGatewayClient({ url, token: token ?? "" });
 
     try {

@@ -29,11 +29,21 @@ export async function POST(request: Request) {
 
     try {
       client.onEvent((event, payload) => {
-        // Listen for presence/agent-list events
         if (event === "agents.list" || event === "presence.sync") {
           const list = (payload as { agents?: Array<{ id: string; role?: string }> }).agents;
           if (Array.isArray(list)) {
             agents.push(...list);
+          }
+        }
+        // OpenClaw gateway sends agent data in health events
+        if (event === "health") {
+          const healthAgents = (payload as { agents?: Array<{ agentId: string; name?: string; isDefault?: boolean }> }).agents;
+          if (Array.isArray(healthAgents)) {
+            for (const a of healthAgents) {
+              if (!agents.some((x) => x.id === a.agentId)) {
+                agents.push({ id: a.agentId, role: a.name });
+              }
+            }
           }
         }
       });

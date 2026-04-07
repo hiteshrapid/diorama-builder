@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { ROOM_PRESETS } from "@diorama/engine";
+import { CustomRoomForm } from "../builder/CustomRoomForm";
 
 const PRESET_ICONS: Record<string, string> = {
   meeting: "M",
@@ -12,9 +14,12 @@ const PRESET_ICONS: Record<string, string> = {
 
 interface PresetPaletteProps {
   onAdd: (presetId: string) => void;
+  onAddCustom?: (name: string, width: number, height: number) => void;
 }
 
-export function PresetPalette({ onAdd }: PresetPaletteProps) {
+export function PresetPalette({ onAdd, onAddCustom }: PresetPaletteProps) {
+  const [showCustomForm, setShowCustomForm] = useState(false);
+
   return (
     <div>
       <h4 style={{ margin: "0 0 12px", fontSize: 13, color: "#999" }}>Room Presets</h4>
@@ -61,6 +66,55 @@ export function PresetPalette({ onAdd }: PresetPaletteProps) {
             </div>
           </button>
         ))}
+
+        {/* Custom room */}
+        {showCustomForm ? (
+          <CustomRoomForm
+            onAdd={(name, w, h) => {
+              onAddCustom?.(name, w, h);
+              setShowCustomForm(false);
+            }}
+            onCancel={() => setShowCustomForm(false)}
+          />
+        ) : (
+          <button
+            onClick={() => setShowCustomForm(true)}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              padding: "10px 12px",
+              background: "transparent",
+              border: "1px dashed #2a3545",
+              borderRadius: 8,
+              color: "#8090c0",
+              cursor: "pointer",
+              textAlign: "left",
+              transition: "border-color 0.15s",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#8090c0")}
+            onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#2a3545")}
+          >
+            <div style={{
+              width: 36,
+              height: 36,
+              borderRadius: 8,
+              background: "#0d1520",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 18,
+              fontWeight: 700,
+              color: "#8090c0",
+            }}>
+              +
+            </div>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 600 }}>Custom Room</div>
+              <div style={{ fontSize: 11, color: "#666" }}>Blank room, your layout</div>
+            </div>
+          </button>
+        )}
       </div>
     </div>
   );

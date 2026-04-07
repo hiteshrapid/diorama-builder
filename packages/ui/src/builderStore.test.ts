@@ -182,5 +182,129 @@ describe("builderReducer", () => {
       // Should reject — position unchanged
       expect(next.rooms.find((r) => r.id === "b-4-0")!.position).toEqual([4, 0]);
     });
+
+    it("prevents resizing a room into an overlapping size", () => {
+      let state = createBuilderState([room("a", 0, 0, 2, 2), room("b", 3, 0, 2, 2)]);
+      const next = builderReducer(state, {
+        type: "RESIZE_ROOM",
+        roomId: "a-0-0",
+        size: [4, 2], // would overlap b (extends from 0 to 4, b starts at 3)
+      });
+      // Should reject — size unchanged
+      expect(next.rooms.find((r) => r.id === "a-0-0")!.size).toEqual([2, 2]);
+    });
+  });
+
+  describe("SET_ROOM_COLORS", () => {
+    it("updates room colors and pushes history", () => {
+      const state = createBuilderState([room("a", 0, 0)]);
+      const next = builderReducer(state, {
+        type: "SET_ROOM_COLORS",
+        roomId: "a-0-0",
+        colors: { accent: "#ff0000", floor: "#00ff00" },
+      });
+      expect(next.rooms[0].colors).toEqual({ accent: "#ff0000", floor: "#00ff00" });
+      expect(next.history.past).toHaveLength(1);
+    });
+
+    it("clears colors when set to undefined", () => {
+      let state = createBuilderState([room("a", 0, 0)]);
+      state = builderReducer(state, {
+        type: "SET_ROOM_COLORS",
+        roomId: "a-0-0",
+        colors: { accent: "#ff0000" },
+      });
+      const next = builderReducer(state, {
+        type: "SET_ROOM_COLORS",
+        roomId: "a-0-0",
+        colors: undefined,
+      });
+      expect(next.rooms[0].colors).toBeUndefined();
+      expect(next.history.past).toHaveLength(2);
+    });
+  });
+
+  describe("ADD_FURNITURE", () => {
+    const chair = {
+      geometry: "cylinder" as const,
+      size: [0.2, 0.7, 0.2] as [number, number, number],
+      position: [0, 0.35, 0] as [number, number, number],
+      material: { color: "#333" },
+    };
+
+    it("adds item to room without existing furniture (creates array)", () => {
+      const state = createBuilderState([room("a", 0, 0)]);
+      const next = builderReducer(state, {
+        type: "ADD_FURNITURE",
+        roomId: "a-0-0",
+        item: chair,
+      });
+      expect(next.rooms[0].furniture).toHaveLength(1);
+      expect(next.rooms[0].furniture![0].geometry).toBe("cylinder");
+      expect(next.history.past).toHaveLength(1);
+    });
+
+    it("adds to room with existing furniture", () => {
+      let state = createBuilderState([room("a", 0, 0)]);
+      state = builderReducer(state, {
+        type: "ADD_FURNITURE",
+        roomId: "a-0-0",
+        item: chair,
+      });
+      const desk = {
+        geometry: "box" as const,
+        size: [1.2, 0.08, 0.6] as [number, number, number],
+        position: [0, 0.75, 0] as [number, number, number],
+        material: { color: "#1a2a40" },
+      };
+      const next = builderReducer(state, {
+        type: "ADD_FURNITURE",
+        roomId: "a-0-0",
+        item: desk,
+      });
+      expect(next.rooms[0].furniture).toHaveLength(2);
+      expect(next.rooms[0].furniture![1].geometry).toBe("box");
+    });
+  });
+
+  describe("REMOVE_FURNITURE", () => {
+    const chair = {
+      geometry: "cylinder" as const,
+      size: [0.2, 0.7, 0.2] as [number, number, number],
+      position: [0, 0.35, 0] as [number, number, number],
+      material: { color: "#333" },
+    };
+
+    it("removes furniture by index", () => {
+      let state = createBuilderState([room("a", 0, 0)]);
+      state = builderReducer(state, { type: "ADD_FURNITURE", roomId: "a-0-0", item: chair });
+      const desk = {
+        geometry: "box" as const,
+        size: [1.2, 0.08, 0.6] as [number, number, number],
+        position: [0, 0.75, 0] as [number, number, number],
+        material: { color: "#1a2a40" },
+      };
+      state = builderReducer(state, { type: "ADD_FURNITURE", roomId: "a-0-0", item: desk });
+      expect(state.rooms[0].furniture).toHaveLength(2);
+
+      const next = builderReducer(state, {
+        type: "REMOVE_FURNITURE",
+        roomId: "a-0-0",
+        furnitureIndex: 0,
+      });
+      expect(next.rooms[0].furniture).toHaveLength(1);
+      expect(next.rooms[0].furniture![0].geometry).toBe("box");
+      expect(next.history.past).toHaveLength(3);
+    });
+
+    it("is a no-op on room without furniture", () => {
+      const state = createBuilderState([room("a", 0, 0)]);
+      const next = builderReducer(state, {
+        type: "REMOVE_FURNITURE",
+        roomId: "a-0-0",
+        furnitureIndex: 0,
+      });
+      expect(next).toBe(state);
+    });
   });
 });

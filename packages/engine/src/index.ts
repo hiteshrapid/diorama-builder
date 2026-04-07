@@ -1,6 +1,6 @@
 // Config
 export { parseConfig, DioramaConfigError } from "./config";
-export type { DioramaConfig, RoomConfig, AgentAssignment } from "./config";
+export type { DioramaConfig, RoomConfig, RoomColors, AgentAssignment } from "./config";
 
 // Plugins
 export {
@@ -54,3 +54,12 @@ export type { AutoLayoutResult } from "./autoLayout";
 // Room Presets
 export { ROOM_PRESETS, getPreset, getFurniture } from "./roomPresets";
 export type { RoomPreset, FurnitureItem, ThemeId } from "./roomPresets";
+
+// Furniture Catalog
+export {
+  FURNITURE_CATALOG,
+  getCatalogByCategory,
+  getCatalogItem,
+  catalogItemToFurniture,
+} from "./furnitureCatalog";
+export type { CatalogItem, FurnitureCategory } from "./furnitureCatalog";

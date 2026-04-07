@@ -4,6 +4,14 @@ export interface RoomPlacement {
   position: [number, number];
   size: [number, number];
   label: string;
+  colors?: { accent?: string; floor?: string; wall?: string };
+  furniture?: Array<{
+    geometry: "box" | "cylinder" | "sphere" | "plane";
+    size: [number, number, number];
+    position: [number, number, number];
+    rotation?: [number, number, number];
+    material: { color: string; emissive?: string; wireframe?: boolean; opacity?: number };
+  }>;
 }
 
 interface HistoryEntry {
@@ -26,6 +34,9 @@ export type BuilderAction =
   | { type: "RESIZE_ROOM"; roomId: string; size: [number, number] }
   | { type: "UPDATE_ROOM"; roomId: string; updates: Partial<Pick<RoomPlacement, "label">> }
   | { type: "SELECT_ROOM"; roomId: string | null }
+  | { type: "SET_ROOM_COLORS"; roomId: string; colors: RoomPlacement["colors"] }
+  | { type: "ADD_FURNITURE"; roomId: string; item: NonNullable<RoomPlacement["furniture"]>[0] }
+  | { type: "REMOVE_FURNITURE"; roomId: string; furnitureIndex: number }
   | { type: "UNDO" }
   | { type: "REDO" };
 
@@ -53,7 +64,7 @@ function pushHistory(state: BuilderState): BuilderState {
   return {
     ...state,
     history: {
-      past: [...state.history.past, { rooms: state.rooms }],
+      past: [...state.history.past, { rooms: structuredClone(state.rooms) }],
       future: [],
     },
   };
@@ -89,12 +100,14 @@ export function builderReducer(state: BuilderState, action: BuilderAction): Buil
     }
 
     case "RESIZE_ROOM": {
+      const room = state.rooms.find((r) => r.id === action.roomId);
+      if (!room) return state;
+      const resized = { ...room, size: action.size };
+      if (hasOverlap(resized, state.rooms)) return state;
       const withHistory = pushHistory(state);
       return {
         ...withHistory,
-        rooms: state.rooms.map((r) =>
-          r.id === action.roomId ? { ...r, size: action.size } : r
-        ),
+        rooms: state.rooms.map((r) => (r.id === action.roomId ? resized : r)),
       };
     }
 
@@ -134,6 +147,46 @@ export function builderReducer(state: BuilderState, action: BuilderAction): Buil
           past: [...state.history.past, { rooms: state.rooms }],
           future: state.history.future.slice(1),
         },
+      };
+    }
+
+    case "SET_ROOM_COLORS": {
+      const room = state.rooms.find((r) => r.id === action.roomId);
+      if (!room) return state;
+      const withHistory = pushHistory(state);
+      return {
+        ...withHistory,
+        rooms: state.rooms.map((r) =>
+          r.id === action.roomId ? { ...r, colors: action.colors } : r
+        ),
+      };
+    }
+
+    case "ADD_FURNITURE": {
+      const room = state.rooms.find((r) => r.id === action.roomId);
+      if (!room) return state;
+      const withHistory = pushHistory(state);
+      return {
+        ...withHistory,
+        rooms: state.rooms.map((r) =>
+          r.id === action.roomId
+            ? { ...r, furniture: [...(r.furniture ?? []), action.item] }
+            : r
+        ),
+      };
+    }
+
+    case "REMOVE_FURNITURE": {
+      const room = state.rooms.find((r) => r.id === action.roomId);
+      if (!room || !room.furniture) return state;
+      const withHistory = pushHistory(state);
+      return {
+        ...withHistory,
+        rooms: state.rooms.map((r) =>
+          r.id === action.roomId
+            ? { ...r, furniture: r.furniture!.filter((_, i) => i !== action.furnitureIndex) }
+            : r
+        ),
       };
     }
 
