@@ -160,6 +160,9 @@ export function BuildStep3D({ rooms, theme, selectedRoomId, dispatch, isPlacingF
 
         {/* Invisible ground plane for drag / resize tracking */}
         <DragGroundPlane
+          onPointerDown={() => {
+            dispatch({ type: "SELECT_ROOM", roomId: null });
+          }}
           onPointerMove={onGroundMove}
           onPointerUp={onGroundUp}
         />

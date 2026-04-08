@@ -5,6 +5,7 @@ import type { ThreeEvent } from "@react-three/fiber";
 interface DragGroundPlaneProps {
   onPointerMove: (e: ThreeEvent<PointerEvent>) => void;
   onPointerUp: () => void;
+  onPointerDown?: (e: ThreeEvent<PointerEvent>) => void;
 }
 
 /**
@@ -13,11 +14,12 @@ interface DragGroundPlaneProps {
  * so it doesn't intercept clicks on rooms, but catches any
  * pointer movement over empty space.
  */
-export function DragGroundPlane({ onPointerMove, onPointerUp }: DragGroundPlaneProps) {
+export function DragGroundPlane({ onPointerMove, onPointerUp, onPointerDown }: DragGroundPlaneProps) {
   return (
     <mesh
       position={[0, -0.002, 0]}
       rotation={[-Math.PI / 2, 0, 0]}
+      onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
     >

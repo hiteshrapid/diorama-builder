@@ -92,6 +92,7 @@ PATH="/opt/homebrew/bin:$PATH" npx next build
 - `packages/app/components/scene/Room3D.tsx` — Room rendering (3D full)
 - `packages/app/components/scene/RoomFurniture3D.tsx` — 3D furniture geometry rendering
 - `packages/app/components/scene/ResizeHandles.tsx` — 8-handle room resize
+- `packages/app/components/scene/DragGroundPlane.tsx` — Invisible ground plane for drag tracking + click-to-deselect
 - `packages/app/components/scene/AlignmentGuides.tsx` — Snap alignment guides
 - `packages/app/components/scene/GLBFurniture.tsx` — GLB model loading for furniture
 - `packages/app/components/wizard/ProToolbar.tsx` — Toolbar: Select indicator + undo/redo
@@ -120,3 +121,11 @@ Fixed floor texture system that broke after 2D view removal:
 4. **`drawFloorPattern` missing default case** — Invalid floor style silently rendered transparent. Added solid-color default case in `floorTexture.ts`.
 
 Tests added: 15 new tests across `floorTexture.test.ts`, `roomPresets.test.ts`, `builderStore.test.ts`, `config.test.ts`. Total: 372+.
+
+### 2026-04-08 — Click-to-Deselect Rooms
+
+Clicking empty space in the 3D scene now deselects the selected room. Previously `onPointerMissed` on the Canvas never fired because the `DragGroundPlane` mesh intercepted all empty-space clicks.
+
+- Added `onPointerDown` prop to `DragGroundPlane.tsx` that dispatches `SELECT_ROOM` with `null`
+- Optimized `builderReducer` SELECT_ROOM to short-circuit when selection unchanged (same state ref)
+- 3 new tests in `builderStore.test.ts`. Total: 378+.

@@ -125,6 +125,7 @@ export function builderReducer(state: BuilderState, action: BuilderAction): Buil
     }
 
     case "SELECT_ROOM":
+      if (state.selectedRoomId === action.roomId) return state;
       return { ...state, selectedRoomId: action.roomId };
 
     case "UNDO": {

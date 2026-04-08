@@ -96,6 +96,32 @@ describe("builderReducer", () => {
     expect(next.selectedRoomId).toBeNull();
   });
 
+  describe("click-to-deselect (empty space)", () => {
+    it("deselecting preserves all room data unchanged", () => {
+      const rooms = [room("a", 0, 0, 3, 3), room("b", 4, 0, 2, 2)];
+      let state = createBuilderState(rooms);
+      state = builderReducer(state, { type: "SELECT_ROOM", roomId: "a-0-0" });
+      const next = builderReducer(state, { type: "SELECT_ROOM", roomId: null });
+      expect(next.selectedRoomId).toBeNull();
+      expect(next.rooms).toEqual(state.rooms);
+    });
+
+    it("deselecting when already deselected is a no-op (same state ref)", () => {
+      const state = createBuilderState([room("a", 0, 0)]);
+      expect(state.selectedRoomId).toBeNull();
+      const next = builderReducer(state, { type: "SELECT_ROOM", roomId: null });
+      expect(next).toBe(state);
+    });
+
+    it("deselect does not push to undo history", () => {
+      let state = createBuilderState([room("a", 0, 0)]);
+      state = builderReducer(state, { type: "SELECT_ROOM", roomId: "a-0-0" });
+      const historyBefore = state.history.past.length;
+      const next = builderReducer(state, { type: "SELECT_ROOM", roomId: null });
+      expect(next.history.past).toHaveLength(historyBefore);
+    });
+  });
+
   describe("undo/redo", () => {
     it("undoes the last action", () => {
       let state = createBuilderState();
