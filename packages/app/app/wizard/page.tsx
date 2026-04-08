@@ -38,7 +38,7 @@ export default function WizardPage() {
   });
 
   return (
-    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+    <div style={{ height: "100vh", overflow: "hidden", display: "flex", flexDirection: "column" }}>
       {/* Step indicator */}
       <div style={{ display: "flex", gap: 8, padding: "24px 32px", justifyContent: "center" }}>
         {STEP_LABELS.map((label, i) => (
@@ -71,7 +71,7 @@ export default function WizardPage() {
       </div>
 
       {/* Step content */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minHeight: 0 }}>
         {step === 1 && (
           <div style={{ display: "flex", justifyContent: "center", padding: "48px 24px" }}>
             <ConnectStep

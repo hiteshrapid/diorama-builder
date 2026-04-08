@@ -60,13 +60,27 @@ describe("furnitureCatalog", () => {
   describe("catalogItemToFurniture", () => {
     it("converts catalog item to furniture placement data", () => {
       const item = getCatalogItem("desk")!;
-      const pos: [number, number, number] = [1.5, 0.02, -0.3];
+      const pos: [number, number, number] = [1.5, 0, -0.3];
       const result = catalogItemToFurniture(item, pos);
 
       expect(result.geometry).toBe("box");
       expect(result.size).toEqual(item.defaultSize);
-      expect(result.position).toEqual(pos);
+      // Y is driven by item.defaultY (0.75 for desk), not the raw input Y
+      expect(result.position).toEqual([1.5, item.defaultY ?? item.defaultSize[1] / 2, -0.3]);
+      expect(result.label).toBe(item.label);
       expect(result.material.color).toBe(item.defaultMaterial.color);
+    });
+
+    it("uses defaultRotation for plane items like rug", () => {
+      const rug = getCatalogItem("rug")!;
+      const result = catalogItemToFurniture(rug, [0, 0, 0]);
+      expect(result.rotation).toEqual([-Math.PI / 2, 0, 0]);
+    });
+
+    it("does not set rotation for non-plane items", () => {
+      const chair = getCatalogItem("chair")!;
+      const result = catalogItemToFurniture(chair, [0, 0, 0]);
+      expect(result.rotation).toBeUndefined();
     });
 
     it("returns independent copies (no shared refs)", () => {

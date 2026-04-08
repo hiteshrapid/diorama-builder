@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { ROOM_PRESETS, getPreset, getFurniture, type RoomPreset } from "./roomPresets";
+import { ROOM_PRESETS, getPreset, getFurniture, getFloorWall, type RoomPreset } from "./roomPresets";
+import { FLOOR_STYLES } from "./floorTexture";
 
 const THEME_IDS = ["neon-dark", "warm-office", "cyberpunk", "minimal"];
 
@@ -79,5 +80,60 @@ describe("getFurniture", () => {
 
   it("returns empty array for unknown preset", () => {
     expect(getFurniture("nonexistent", "neon-dark")).toEqual([]);
+  });
+});
+
+describe("floorWallByTheme", () => {
+  const THEMES = ["neon-dark", "warm-office", "cyberpunk", "minimal"];
+  const hexRe = /^#[0-9a-f]{6}$/i;
+
+  it("every preset has floorWallByTheme for all 4 themes", () => {
+    for (const preset of ROOM_PRESETS) {
+      for (const theme of THEMES) {
+        expect(preset.floorWallByTheme[theme]).toBeDefined();
+      }
+    }
+  });
+
+  it("every entry has a valid floorStyle", () => {
+    for (const preset of ROOM_PRESETS) {
+      for (const theme of THEMES) {
+        expect(FLOOR_STYLES).toContain(preset.floorWallByTheme[theme].floorStyle);
+      }
+    }
+  });
+
+  it("every entry has valid hex color strings", () => {
+    for (const preset of ROOM_PRESETS) {
+      for (const theme of THEMES) {
+        const fw = preset.floorWallByTheme[theme];
+        expect(fw.floorColor).toMatch(hexRe);
+        expect(fw.wallColor).toMatch(hexRe);
+      }
+    }
+  });
+
+  it("getFloorWall returns correct data for meeting/warm-office", () => {
+    expect(getFloorWall("meeting", "warm-office")).toEqual({
+      floorStyle: "grid-tiles",
+      floorColor: "#c4a882",
+      wallColor: "#d4c4a8",
+    });
+  });
+
+  it("getFloorWall falls back to neon-dark for unknown theme", () => {
+    const fw = getFloorWall("workspace", "unknown-theme");
+    expect(fw).toEqual(ROOM_PRESETS.find(p => p.id === "workspace")!.floorWallByTheme["neon-dark"]);
+  });
+
+  it("getFloorWall returns null for unknown preset", () => {
+    expect(getFloorWall("nonexistent", "neon-dark")).toBeNull();
+  });
+
+  it("getFloorWall returns null for 'custom' preset", () => {
+    expect(getFloorWall("custom", "neon-dark")).toBeNull();
+    expect(getFloorWall("custom", "warm-office")).toBeNull();
+    expect(getFloorWall("custom", "cyberpunk")).toBeNull();
+    expect(getFloorWall("custom", "minimal")).toBeNull();
   });
 });

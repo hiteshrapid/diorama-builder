@@ -1,6 +1,8 @@
 "use client";
 
+import * as THREE from "three";
 import type { FurnitureItem } from "@diorama/engine";
+import { GLBFurniture } from "./GLBFurniture";
 
 interface RoomFurniture3DProps {
   items: FurnitureItem[];
@@ -21,6 +23,19 @@ function FurnitureMesh({ item }: { item: FurnitureItem }) {
   const pos = item.position as [number, number, number];
   const rot = item.rotation as [number, number, number] | undefined;
 
+  // Prefer real GLB model when available
+  if (item.glbPath) {
+    return (
+      <GLBFurniture
+        path={item.glbPath}
+        position={pos}
+        rotation={rot}
+        scale={item.glbScale ?? 1}
+        fallbackSize={item.size}
+      />
+    );
+  }
+
   return (
     <mesh position={pos} rotation={rot}>
       <GeometryForType type={item.geometry} size={item.size} />
@@ -31,6 +46,7 @@ function FurnitureMesh({ item }: { item: FurnitureItem }) {
         wireframe={item.material.wireframe ?? false}
         transparent={item.material.opacity != null && item.material.opacity < 1}
         opacity={item.material.opacity ?? 1}
+        side={item.geometry === "plane" ? THREE.DoubleSide : THREE.FrontSide}
       />
     </mesh>
   );

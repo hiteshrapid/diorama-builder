@@ -307,4 +307,114 @@ describe("builderReducer", () => {
       expect(next).toBe(state);
     });
   });
+
+  describe("SET_FLOOR_STYLE", () => {
+    it("sets floorStyle on the specified room", () => {
+      const state = createBuilderState([room("a", 0, 0)]);
+      const next = builderReducer(state, {
+        type: "SET_FLOOR_STYLE",
+        roomId: "a-0-0",
+        floorStyle: "wood-planks",
+      });
+      expect(next.rooms[0].floorStyle).toBe("wood-planks");
+    });
+
+    it("clears floorStyle when set to undefined", () => {
+      let state = createBuilderState([room("a", 0, 0)]);
+      state = builderReducer(state, {
+        type: "SET_FLOOR_STYLE",
+        roomId: "a-0-0",
+        floorStyle: "hex-tiles",
+      });
+      const next = builderReducer(state, {
+        type: "SET_FLOOR_STYLE",
+        roomId: "a-0-0",
+        floorStyle: undefined,
+      });
+      expect(next.rooms[0].floorStyle).toBeUndefined();
+    });
+
+    it("pushes history on SET_FLOOR_STYLE", () => {
+      const state = createBuilderState([room("a", 0, 0)]);
+      const next = builderReducer(state, {
+        type: "SET_FLOOR_STYLE",
+        roomId: "a-0-0",
+        floorStyle: "carpet",
+      });
+      expect(next.history.past).toHaveLength(1);
+    });
+
+    it("ignores unknown roomId", () => {
+      const state = createBuilderState([room("a", 0, 0)]);
+      const next = builderReducer(state, {
+        type: "SET_FLOOR_STYLE",
+        roomId: "nonexistent",
+        floorStyle: "grid-tiles",
+      });
+      expect(next).toBe(state);
+    });
+
+    it("sets floorStyle on a custom room", () => {
+      const state = createBuilderState([room("custom", 0, 0)]);
+      const next = builderReducer(state, {
+        type: "SET_FLOOR_STYLE",
+        roomId: "custom-0-0",
+        floorStyle: "wood-planks",
+      });
+      expect(next.rooms[0].floorStyle).toBe("wood-planks");
+      expect(next.rooms[0].preset).toBe("custom");
+    });
+
+    it("clears floorStyle override on custom room", () => {
+      let state = createBuilderState([room("custom", 0, 0)]);
+      state = builderReducer(state, {
+        type: "SET_FLOOR_STYLE",
+        roomId: "custom-0-0",
+        floorStyle: "hex-tiles",
+      });
+      const next = builderReducer(state, {
+        type: "SET_FLOOR_STYLE",
+        roomId: "custom-0-0",
+        floorStyle: undefined,
+      });
+      expect(next.rooms[0].floorStyle).toBeUndefined();
+    });
+
+    it("undo restores previous floor style", () => {
+      let state = createBuilderState([room("workspace", 0, 0)]);
+      state = builderReducer(state, {
+        type: "SET_FLOOR_STYLE",
+        roomId: "workspace-0-0",
+        floorStyle: "grid-tiles",
+      });
+      expect(state.rooms[0].floorStyle).toBe("grid-tiles");
+      state = builderReducer(state, { type: "UNDO" });
+      expect(state.rooms[0].floorStyle).toBeUndefined();
+    });
+
+    it("redo re-applies floor style", () => {
+      let state = createBuilderState([room("workspace", 0, 0)]);
+      state = builderReducer(state, {
+        type: "SET_FLOOR_STYLE",
+        roomId: "workspace-0-0",
+        floorStyle: "carpet",
+      });
+      state = builderReducer(state, { type: "UNDO" });
+      state = builderReducer(state, { type: "REDO" });
+      expect(state.rooms[0].floorStyle).toBe("carpet");
+    });
+
+    it("preserves other room fields when setting floor style", () => {
+      let state = createBuilderState([room("meeting", 1, 2, 3, 4)]);
+      state = builderReducer(state, {
+        type: "SET_FLOOR_STYLE",
+        roomId: "meeting-1-2",
+        floorStyle: "hex-tiles",
+      });
+      expect(state.rooms[0].preset).toBe("meeting");
+      expect(state.rooms[0].position).toEqual([1, 2]);
+      expect(state.rooms[0].size).toEqual([3, 4]);
+      expect(state.rooms[0].label).toBe("meeting");
+    });
+  });
 });

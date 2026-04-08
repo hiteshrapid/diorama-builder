@@ -23,7 +23,7 @@ interface FurnitureCatalogPanelProps {
   onSelectItem: (item: CatalogItem) => void;
   onCancelPlacement: () => void;
   /** Furniture already in the room, for the item list */
-  existingFurniture: Array<{ geometry: string; size: [number, number, number] }>;
+  existingFurniture: Array<{ geometry: string; size: [number, number, number]; label?: string }>;
   onRemoveFurniture: (index: number) => void;
 }
 
@@ -109,7 +109,7 @@ export function FurnitureCatalogPanel({
                   color: "#999",
                 }}
               >
-                <span>{f.geometry} ({f.size[0].toFixed(1)}x{f.size[2].toFixed(1)})</span>
+                <span>{f.label ?? f.geometry} ({f.size[0].toFixed(1)}x{f.size[2].toFixed(1)})</span>
                 <button
                   onClick={() => onRemoveFurniture(i)}
                   style={{

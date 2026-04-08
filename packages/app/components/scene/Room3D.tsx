@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useCallback } from "react";
+import { useMemo, useCallback, useState, useEffect } from "react";
+import * as THREE from "three";
 import { Html } from "@react-three/drei";
-import { generateFloor, generateWalls, getFurniture, type RoomConfig } from "@diorama/engine";
+import { generateFloor, generateWalls, getFurniture, getFloorWall, drawFloorPattern, type RoomConfig, type FloorStyle } from "@diorama/engine";
 import { RoomFurniture3D } from "./RoomFurniture3D";
 import type { ThreeEvent } from "@react-three/fiber";
 
@@ -22,10 +23,37 @@ interface Room3DProps {
 }
 
 export function Room3D({ room, accentColor, floorColor, themeId, selected, glowIntensity = 0, onPointerDown, onPointerUp, onPointerMove }: Room3DProps) {
-  // Resolve effective colors: per-room overrides > theme defaults
+  // Resolve preset floor+wall defaults; null for unknown presets (e.g. "custom") — downstream uses have fallbacks
+  const presetFloorWall = useMemo(
+    () => getFloorWall(room.preset, themeId),
+    [room.preset, themeId],
+  );
+
+  // Three-tier color resolution: per-room override > preset theme default > global theme fallback
   const effectiveAccent = room.colors?.accent ?? accentColor;
-  const effectiveFloor = room.colors?.floor ?? floorColor;
-  const effectiveWall = room.colors?.wall ?? accentColor;
+  const effectiveFloor  = room.colors?.floor  ?? presetFloorWall?.floorColor ?? floorColor;
+  const effectiveWall   = room.colors?.wall   ?? presetFloorWall?.wallColor  ?? accentColor;
+  const effectiveStyle  = (room.floorStyle ?? presetFloorWall?.floorStyle ?? "solid") as FloorStyle;
+
+  // Generate procedural floor texture with proper GPU disposal on deps change
+  const [floorTexture, setFloorTexture] = useState<THREE.Texture | null>(null);
+  useEffect(() => {
+    if (effectiveStyle === "solid") {
+      setFloorTexture(null);
+      return;
+    }
+    const canvas = document.createElement("canvas");
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext("2d")!;
+    drawFloorPattern(ctx, effectiveStyle, effectiveFloor);
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(room.size[0] * 1.5, room.size[1] * 1.5);
+    setFloorTexture(tex as THREE.Texture);
+    return () => { tex.dispose(); };
+  }, [effectiveStyle, effectiveFloor, room.size]);
 
   const { floor, walls } = useMemo(() => {
     const rect = {
@@ -69,7 +97,19 @@ export function Room3D({ room, accentColor, floorColor, themeId, selected, glowI
       {/* Floor */}
       <mesh position={floor.position} receiveShadow>
         <boxGeometry args={[floor.width, 0.05, floor.depth]} />
-        <meshStandardMaterial color={floor.color} roughness={0.8} />
+        {floorTexture ? (
+          <meshStandardMaterial
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            map={floorTexture as any}
+            emissive="#ffffff"
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            emissiveMap={floorTexture as any}
+            emissiveIntensity={0.3}
+            roughness={0.7}
+          />
+        ) : (
+          <meshStandardMaterial color={floor.color} roughness={0.8} />
+        )}
       </mesh>
 
       {/* Selection highlight */}
@@ -108,7 +148,7 @@ export function Room3D({ room, accentColor, floorColor, themeId, selected, glowI
         </mesh>
       ))}
 
-      {/* Room label */}
+      {/* Room label — floating above */}
       <Html
         position={[floor.position[0], 2.8, floor.position[2]]}
         center
@@ -138,6 +178,46 @@ export function Room3D({ room, accentColor, floorColor, themeId, selected, glowI
           opacity={0.1}
         />
       </mesh>
+
+      {/* Dimension callouts — visible when selected (all 4 edges) */}
+      {selected && (() => {
+        const cx = floor.position[0];
+        const cz = floor.position[2];
+        const hw = floor.width / 2;
+        const hd = floor.depth / 2;
+        const labelStyle: React.CSSProperties = {
+          fontFamily: "'SF Mono', 'Fira Code', monospace",
+          fontSize: 10,
+          fontWeight: 500,
+          background: "rgba(10,18,32,0.82)",
+          color: "#8bacd4",
+          padding: "1px 5px",
+          borderRadius: 3,
+          whiteSpace: "nowrap",
+          userSelect: "none",
+          pointerEvents: "none",
+        };
+        return (
+          <>
+            {/* North edge — width */}
+            <Html position={[cx, 0.15, cz - hd - 0.6]} center style={{ pointerEvents: "none" }}>
+              <div style={labelStyle}>{room.size[0].toFixed(1)} m</div>
+            </Html>
+            {/* West edge — depth */}
+            <Html position={[cx - hw - 0.6, 0.15, cz]} center style={{ pointerEvents: "none" }}>
+              <div style={labelStyle}>{room.size[1].toFixed(1)} m</div>
+            </Html>
+            {/* South edge — width */}
+            <Html position={[cx, 0.15, cz + hd + 0.6]} center style={{ pointerEvents: "none" }}>
+              <div style={labelStyle}>{room.size[0].toFixed(1)} m</div>
+            </Html>
+            {/* East edge — depth */}
+            <Html position={[cx + hw + 0.6, 0.15, cz]} center style={{ pointerEvents: "none" }}>
+              <div style={labelStyle}>{room.size[1].toFixed(1)} m</div>
+            </Html>
+          </>
+        );
+      })()}
 
       {/* Furniture */}
       <RoomFurniture3D items={furniture} roomCenter={roomCenter} />

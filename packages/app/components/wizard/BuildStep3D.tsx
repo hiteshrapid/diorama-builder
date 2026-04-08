@@ -1,12 +1,15 @@
 "use client";
 
-import { Component, type ReactNode } from "react";
-import { Canvas } from "@react-three/fiber";
-import { OrbitControls } from "@react-three/drei";
+import { Component, useMemo, useEffect, useRef, type ReactNode } from "react";
+import { Canvas, useThree } from "@react-three/fiber";
+import { OrbitControls, PerspectiveCamera } from "@react-three/drei";
+import { toWorld } from "@diorama/engine";
+import * as THREE from "three";
 import { Room3D } from "../scene/Room3D";
 import { DragGroundPlane } from "../scene/DragGroundPlane";
 import { GhostRoom } from "../scene/GhostRoom";
 import { ResizeHandles } from "../scene/ResizeHandles";
+import { AlignmentGuides } from "../scene/AlignmentGuides";
 import { useDragRoom } from "../../hooks/useDragRoom";
 import { useResizeRoom } from "../../hooks/useResizeRoom";
 import type { RoomPlacement, BuilderAction } from "@diorama/ui/src/builderStore";
@@ -54,12 +57,38 @@ interface BuildStep3DProps {
   onFurniturePlacementClick?: (e: import("@react-three/fiber").ThreeEvent<PointerEvent>) => void;
 }
 
+/** Syncs camera + OrbitControls target to the rooms centroid on every frame */
+function CameraSync({ center }: { center: [number, number, number] }) {
+  const { camera, controls } = useThree();
+  const prevCenter = useRef<string>("");
+
+  useEffect(() => {
+    const key = `${center[0].toFixed(2)},${center[2].toFixed(2)}`;
+    if (key === prevCenter.current) return;
+    prevCenter.current = key;
+
+    camera.position.set(center[0], 20, center[2] + 15);
+    camera.lookAt(center[0], 0, center[2]);
+    camera.updateProjectionMatrix();
+
+    // Imperatively update OrbitControls target so it orbits around rooms
+    if (controls) {
+      const c = controls as unknown as { target: THREE.Vector3; update: () => void };
+      c.target.set(center[0], 0, center[2]);
+      c.update();
+    }
+  }, [center, camera, controls]);
+
+  return null;
+}
+
 export function BuildStep3D({ rooms, theme, selectedRoomId, dispatch, isPlacingFurniture, onFurniturePlacementClick }: BuildStep3DProps) {
   const colors = THEMES[theme] ?? THEMES["neon-dark"];
 
   const {
     isDragging,
     ghost: dragGhost,
+    alignmentGuides: dragGuides,
     handleRoomPointerDown,
     handlePointerMove: handleDragPointerMove,
     handlePointerUp: handleDragPointerUp,
@@ -68,13 +97,33 @@ export function BuildStep3D({ rooms, theme, selectedRoomId, dispatch, isPlacingF
   const {
     isResizing,
     resizeGhost,
+    alignmentGuides: resizeGuides,
     handleResizePointerDown,
     handleResizePointerMove,
     handleResizePointerUp,
   } = useResizeRoom(rooms, dispatch);
 
+  const allGuides = [...dragGuides, ...resizeGuides];
+
   const selectedRoom = selectedRoomId ? rooms.find((r) => r.id === selectedRoomId) : null;
   const isInteracting = isDragging || isResizing;
+
+  // Compute centroid of all rooms in world coordinates for camera targeting
+  const GRID_UNIT = 200;
+  const roomsCenter = useMemo(() => {
+    if (rooms.length === 0) return [0, 0, 0] as [number, number, number];
+    let minGx = Infinity, minGy = Infinity, maxGx = -Infinity, maxGy = -Infinity;
+    for (const r of rooms) {
+      minGx = Math.min(minGx, r.position[0]);
+      minGy = Math.min(minGy, r.position[1]);
+      maxGx = Math.max(maxGx, r.position[0] + r.size[0]);
+      maxGy = Math.max(maxGy, r.position[1] + r.size[1]);
+    }
+    const cx = ((minGx + maxGx) / 2) * GRID_UNIT;
+    const cy = ((minGy + maxGy) / 2) * GRID_UNIT;
+    const [wx, , wz] = toWorld(cx, cy);
+    return [wx, 0, wz] as [number, number, number];
+  }, [rooms]);
 
   // Merge pointer-move / pointer-up so both drag and resize get events
   const onGroundMove = (e: import("@react-three/fiber").ThreeEvent<PointerEvent>) => {
@@ -89,16 +138,25 @@ export function BuildStep3D({ rooms, theme, selectedRoomId, dispatch, isPlacingF
   return (
     <Canvas3DErrorBoundary>
       <Canvas
-        camera={{ position: [0, 20, 15], fov: 50 }}
         style={{ background: colors.background }}
-        onPointerMissed={() => dispatch({ type: "SELECT_ROOM", roomId: null })}
+        onPointerMissed={() => {
+          dispatch({ type: "SELECT_ROOM", roomId: null });
+        }}
       >
+        {/* Camera */}
+        <PerspectiveCamera makeDefault position={[roomsCenter[0], 20, roomsCenter[2] + 15]} fov={50} />
+        <CameraSync center={roomsCenter} />
+
+        {/* Lighting */}
         <ambientLight intensity={0.4} color={colors.accent} />
         <directionalLight position={[10, 20, 10]} intensity={0.8} castShadow />
         <directionalLight position={[-5, 10, -5]} intensity={0.3} />
 
         {/* Grid helper */}
-        <gridHelper args={[40, 40, "#1a2535", "#111825"]} position={[0, -0.01, 0]} />
+        <gridHelper
+          args={[40, 40, "#1a2535", "#111825"]}
+          position={[0, -0.01, 0]}
+        />
 
         {/* Invisible ground plane for drag / resize tracking */}
         <DragGroundPlane
@@ -157,10 +215,15 @@ export function BuildStep3D({ rooms, theme, selectedRoomId, dispatch, isPlacingF
           />
         )}
 
+        {/* Alignment snap guides */}
+        <AlignmentGuides guides={allGuides} />
+
         <OrbitControls
           makeDefault
           enableDamping
           dampingFactor={0.1}
+          target={roomsCenter}
+          enablePan={false}
           minPolarAngle={0.2}
           maxPolarAngle={Math.PI / 2.2}
           minDistance={5}

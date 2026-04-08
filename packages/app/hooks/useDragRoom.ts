@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef } from "react";
 import type { ThreeEvent } from "@react-three/fiber";
 import type { RoomPlacement, BuilderAction } from "@diorama/ui/src/builderStore";
+import { detectAlignments, type AlignmentGuide } from "./useAlignmentDetection";
 
 /** GRID_UNIT(200) * SCALE(0.018) — one grid cell in world units */
 const GRID_WORLD = 3.6;
@@ -43,6 +44,7 @@ export function useDragRoom(
 ) {
   // ---- visual state (triggers re-renders for the ghost overlay) ----
   const [ghost, setGhost] = useState<GhostData | null>(null);
+  const [alignmentGuides, setAlignmentGuides] = useState<AlignmentGuide[]>([]);
 
   // ---- refs for the hot path (no re-render cost) ----
   const dragInfoRef = useRef<DragInfo | null>(null);
@@ -113,11 +115,14 @@ export function useDragRoom(
         info.startGridY + gridDz,
       ];
 
-      const overlaps = checkOverlap(newPos, info.roomSize, info.roomId);
+      // Snap to aligned edges/centers of other rooms
+      const { snappedPos, guides } = detectAlignments(newPos, info.roomSize, roomsRef.current, info.roomId);
+      const overlaps = checkOverlap(snappedPos, info.roomSize, info.roomId);
 
-      ghostDataRef.current = { position: newPos, isValid: !overlaps };
+      setAlignmentGuides(guides);
+      ghostDataRef.current = { position: snappedPos, isValid: !overlaps };
       setGhost({
-        position: newPos,
+        position: snappedPos,
         size: info.roomSize,
         isValid: !overlaps,
         roomId: info.roomId,
@@ -149,11 +154,13 @@ export function useDragRoom(
     dragInfoRef.current = null;
     ghostDataRef.current = null;
     setGhost(null);
+    setAlignmentGuides([]);
   }, []);
 
   return {
     isDragging: ghost !== null,
     ghost,
+    alignmentGuides,
     handleRoomPointerDown,
     handlePointerMove,
     handlePointerUp,

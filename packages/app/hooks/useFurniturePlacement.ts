@@ -71,10 +71,13 @@ export function useFurniturePlacement(
       const localX = ((canvasX - roomCanvasX) / roomCanvasW - 0.5) * roomCanvasW * SCALE;
       const localZ = ((canvasY - roomCanvasY) / roomCanvasH - 0.5) * roomCanvasH * SCALE;
 
-      // Y position: half the item height so it sits on the floor
-      const itemY = placingItem.defaultSize[1] / 2;
+      // Use the actual clicked surface Y so items land on whatever was clicked
+      // (floor ≈ 0.025, desk top ≈ 0.77, coffee table ≈ 0.42, etc.).
+      // catalogItemToFurniture will use item.defaultY first if set (rug, surfaces),
+      // falling back to surfaceY for tech/decor items that have no fixed height.
+      const surfaceY = e.point.y + placingItem.defaultSize[1] / 2;
 
-      const furniture = catalogItemToFurniture(placingItem, [localX, itemY, localZ]);
+      const furniture = catalogItemToFurniture(placingItem, [localX, 0, localZ], surfaceY);
 
       dispatchRef.current({
         type: "ADD_FURNITURE",

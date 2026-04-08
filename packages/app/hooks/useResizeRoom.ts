@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef } from "react";
 import type { ThreeEvent } from "@react-three/fiber";
 import type { RoomPlacement, BuilderAction } from "@diorama/ui/src/builderStore";
+import { detectAlignments, type AlignmentGuide } from "./useAlignmentDetection";
 
 /** GRID_UNIT(200) * SCALE(0.018) */
 const GRID_WORLD = 3.6;
@@ -42,6 +43,7 @@ export function useResizeRoom(
   dispatch: React.Dispatch<BuilderAction>,
 ) {
   const [ghost, setGhost] = useState<ResizeGhost | null>(null);
+  const [alignmentGuides, setAlignmentGuides] = useState<AlignmentGuide[]>([]);
   const infoRef = useRef<ResizeInfo | null>(null);
   const roomsRef = useRef(rooms);
   roomsRef.current = rooms;
@@ -126,9 +128,13 @@ export function useResizeRoom(
 
       const newPos: [number, number] = [newX, newY];
       const newSize: [number, number] = [newW, newH];
-      const overlaps = checkOverlap(newPos, newSize, info.roomId);
 
-      const g: ResizeGhost = { position: newPos, size: newSize, isValid: !overlaps };
+      // Snap moving edge to aligned edges/centers of other rooms
+      const { snappedPos, guides } = detectAlignments(newPos, newSize, roomsRef.current, info.roomId);
+      const overlaps = checkOverlap(snappedPos, newSize, info.roomId);
+
+      setAlignmentGuides(guides);
+      const g: ResizeGhost = { position: snappedPos, size: newSize, isValid: !overlaps };
       ghostRef.current = g;
       setGhost(g);
     },
@@ -162,11 +168,13 @@ export function useResizeRoom(
     infoRef.current = null;
     ghostRef.current = null;
     setGhost(null);
+    setAlignmentGuides([]);
   }, []);
 
   return {
     isResizing: ghost !== null,
     resizeGhost: ghost,
+    alignmentGuides,
     handleResizePointerDown,
     handleResizePointerMove,
     handleResizePointerUp,

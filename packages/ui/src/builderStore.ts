@@ -5,11 +5,13 @@ export interface RoomPlacement {
   size: [number, number];
   label: string;
   colors?: { accent?: string; floor?: string; wall?: string };
+  floorStyle?: "solid" | "grid-tiles" | "wood-planks" | "hex-tiles" | "carpet";
   furniture?: Array<{
     geometry: "box" | "cylinder" | "sphere" | "plane";
     size: [number, number, number];
     position: [number, number, number];
     rotation?: [number, number, number];
+    label?: string;
     material: { color: string; emissive?: string; wireframe?: boolean; opacity?: number };
   }>;
 }
@@ -35,6 +37,7 @@ export type BuilderAction =
   | { type: "UPDATE_ROOM"; roomId: string; updates: Partial<Pick<RoomPlacement, "label">> }
   | { type: "SELECT_ROOM"; roomId: string | null }
   | { type: "SET_ROOM_COLORS"; roomId: string; colors: RoomPlacement["colors"] }
+  | { type: "SET_FLOOR_STYLE"; roomId: string; floorStyle: RoomPlacement["floorStyle"] }
   | { type: "ADD_FURNITURE"; roomId: string; item: NonNullable<RoomPlacement["furniture"]>[0] }
   | { type: "REMOVE_FURNITURE"; roomId: string; furnitureIndex: number }
   | { type: "UNDO" }
@@ -158,6 +161,18 @@ export function builderReducer(state: BuilderState, action: BuilderAction): Buil
         ...withHistory,
         rooms: state.rooms.map((r) =>
           r.id === action.roomId ? { ...r, colors: action.colors } : r
+        ),
+      };
+    }
+
+    case "SET_FLOOR_STYLE": {
+      const room = state.rooms.find((r) => r.id === action.roomId);
+      if (!room) return state;
+      const withHistory = pushHistory(state);
+      return {
+        ...withHistory,
+        rooms: state.rooms.map((r) =>
+          r.id === action.roomId ? { ...r, floorStyle: action.floorStyle } : r
         ),
       };
     }

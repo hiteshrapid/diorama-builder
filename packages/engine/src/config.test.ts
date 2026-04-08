@@ -183,4 +183,70 @@ describe("parseConfig", () => {
     expect(result.rooms[0].colors).toBeUndefined();
     expect(result.rooms[0].furniture).toBeUndefined();
   });
+
+  it("parses room with valid floorStyle", () => {
+    const config = {
+      ...validConfig,
+      rooms: [
+        {
+          preset: "custom",
+          position: [0, 0],
+          size: [3, 3],
+          label: "Custom Room",
+          floorStyle: "wood-planks",
+        },
+      ],
+    };
+    const result = parseConfig(config);
+    expect(result.rooms[0].floorStyle).toBe("wood-planks");
+  });
+
+  it("rejects room with invalid floorStyle", () => {
+    const config = {
+      ...validConfig,
+      rooms: [
+        {
+          preset: "custom",
+          position: [0, 0],
+          size: [3, 3],
+          label: "Custom Room",
+          floorStyle: "invalid-style",
+        },
+      ],
+    };
+    expect(() => parseConfig(config)).toThrow(DioramaConfigError);
+  });
+
+  it("parses room with all optional fields (colors + furniture + floorStyle)", () => {
+    const config = {
+      ...validConfig,
+      rooms: [
+        {
+          preset: "custom",
+          position: [0, 0],
+          size: [4, 4],
+          label: "Full Room",
+          floorStyle: "hex-tiles",
+          colors: { accent: "#ff0000", floor: "#00ff00" },
+          furniture: [
+            {
+              geometry: "box",
+              size: [1.0, 0.5, 0.5],
+              position: [0, 0.25, 0],
+              material: { color: "#333333" },
+            },
+          ],
+        },
+      ],
+    };
+    const result = parseConfig(config);
+    expect(result.rooms[0].floorStyle).toBe("hex-tiles");
+    expect(result.rooms[0].colors?.accent).toBe("#ff0000");
+    expect(result.rooms[0].furniture).toHaveLength(1);
+  });
+
+  it("parses room without floorStyle (backward compat)", () => {
+    const result = parseConfig(validConfig);
+    expect(result.rooms[0].floorStyle).toBeUndefined();
+  });
 });

@@ -27,6 +27,9 @@ function configToRooms(config: DioramaConfig): RoomPlacement[] {
     position: r.position as [number, number],
     size: r.size as [number, number],
     label: r.label,
+    ...(r.colors && { colors: r.colors }),
+    ...(r.floorStyle && { floorStyle: r.floorStyle }),
+    ...(r.furniture && { furniture: r.furniture }),
   }));
 }
 
@@ -46,6 +49,9 @@ export function BuilderSidebar({ config, selectedRoom, onConfigChange, onSelectR
           position: r.position,
           size: r.size,
           label: r.label,
+          ...(r.colors && { colors: r.colors }),
+          ...(r.floorStyle && { floorStyle: r.floorStyle }),
+          ...(r.furniture && { furniture: r.furniture }),
         })),
       };
       onConfigChange(updatedConfig);
@@ -117,7 +123,7 @@ export function BuilderSidebar({ config, selectedRoom, onConfigChange, onSelectR
       </div>
 
       {/* Tab content */}
-      <div style={{ flex: 1, overflowY: "auto", padding: 12 }}>
+      <div style={{ flex: 1, overflowY: "auto", overscrollBehavior: "contain", padding: 12 }}>
         {tab === "rooms" && (
           <>
             {selectedPlacement ? (

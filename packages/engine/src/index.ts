@@ -52,8 +52,8 @@ export { generateAutoLayout, findNextPosition } from "./autoLayout";
 export type { AutoLayoutResult } from "./autoLayout";
 
 // Room Presets
-export { ROOM_PRESETS, getPreset, getFurniture } from "./roomPresets";
-export type { RoomPreset, FurnitureItem, ThemeId } from "./roomPresets";
+export { ROOM_PRESETS, getPreset, getFurniture, getFloorWall } from "./roomPresets";
+export type { RoomPreset, FurnitureItem, ThemeId, ThemeFloorWall } from "./roomPresets";
 
 // Furniture Catalog
 export {
@@ -63,3 +63,14 @@ export {
   catalogItemToFurniture,
 } from "./furnitureCatalog";
 export type { CatalogItem, FurnitureCategory } from "./furnitureCatalog";
+
+// Floor Textures
+export {
+  FLOOR_STYLES,
+  FLOOR_STYLE_LABELS,
+  drawFloorPattern,
+  adjustColor,
+  getBrightness,
+  contrastAdjust,
+} from "./floorTexture";
+export type { FloorStyle } from "./floorTexture";

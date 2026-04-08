@@ -5,6 +5,7 @@ const FurnitureItemSchema = z.object({
   size: z.tuple([z.number(), z.number(), z.number()]),
   position: z.tuple([z.number(), z.number(), z.number()]),
   rotation: z.tuple([z.number(), z.number(), z.number()]).optional(),
+  label: z.string().optional(),
   material: z.object({
     color: z.string(),
     emissive: z.string().optional(),
@@ -26,6 +27,7 @@ const RoomSchema = z.object({
   label: z.string(),
   colors: RoomColorsSchema.optional(),
   furniture: z.array(FurnitureItemSchema).optional(),
+  floorStyle: z.enum(["solid", "grid-tiles", "wood-planks", "hex-tiles", "carpet"]).optional(),
 });
 
 const AgentAssignmentSchema = z.object({

@@ -1,13 +1,15 @@
 "use client";
 
 import { useReducer, useState, useCallback, useEffect } from "react";
-import { ROOM_PRESETS, findNextPosition, type RoomConfig, type CatalogItem } from "@diorama/engine";
+import { ROOM_PRESETS, findNextPosition, getFloorWall, type RoomConfig, type CatalogItem, type FloorStyle } from "@diorama/engine";
 import { builderReducer, createBuilderState } from "@diorama/ui/src/builderStore";
 import { PresetPalette } from "./PresetPalette";
 import { AgentAssignPanel } from "./AgentAssignPanel";
 import { ThemeStep } from "./ThemeStep";
 import { BuildStep3D } from "./BuildStep3D";
+import { ProToolbar } from "./ProToolbar";
 import { RoomColorPicker } from "../builder/RoomColorPicker";
+import { FloorStylePicker } from "../builder/FloorStylePicker";
 import { FurnitureCatalogPanel } from "../builder/FurnitureCatalogPanel";
 import { useFurniturePlacement } from "../../hooks/useFurniturePlacement";
 import {
@@ -53,20 +55,27 @@ export function BuildStep({ agents, theme, onThemeChange, onComplete, onBack }: 
     handlePlacementClick,
   } = useFurniturePlacement(rooms, selectedRoomId, dispatch);
 
-  // Undo/Redo + Escape keyboard shortcuts
+  // Keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        cancelPlacement();
-        return;
-      }
+      // Ignore when typing in an input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
+      if (e.key === "Escape") { cancelPlacement(); dispatch({ type: "SELECT_ROOM", roomId: null }); return; }
       if ((e.metaKey || e.ctrlKey) && e.key === "z") {
         e.preventDefault();
         dispatch({ type: e.shiftKey ? "REDO" : "UNDO" });
+        return;
       }
       if ((e.metaKey || e.ctrlKey) && e.key === "y") {
         e.preventDefault();
         dispatch({ type: "REDO" });
+        return;
+      }
+      // Delete selected room
+      if ((e.key === "d" || e.key === "D" || e.key === "Delete" || e.key === "Backspace") && selectedRoomId) {
+        dispatch({ type: "REMOVE_ROOM", roomId: selectedRoomId });
+        return;
       }
     };
     window.addEventListener("keydown", handler);
@@ -138,7 +147,17 @@ export function BuildStep({ agents, theme, onThemeChange, onComplete, onBack }: 
   const canRedo = state.history.future.length > 0;
 
   return (
-    <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+      {/* Top toolbar */}
+      <ProToolbar
+        canUndo={canUndo}
+        canRedo={canRedo}
+        onUndo={() => dispatch({ type: "UNDO" })}
+        onRedo={() => dispatch({ type: "REDO" })}
+      />
+
+      {/* Main content row */}
+      <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
       {/* Left: 3D Viewport */}
       <div style={{ flex: 1, position: "relative" }}>
         <BuildStep3D
@@ -163,57 +182,6 @@ export function BuildStep({ agents, theme, onThemeChange, onComplete, onBack }: 
             <p style={{ fontSize: 13 }}>Add rooms from the palette on the right</p>
           </div>
         )}
-        {/* Undo/Redo toolbar */}
-        {rooms.length > 0 && (
-          <div style={{
-            position: "absolute",
-            top: 12,
-            left: 12,
-            display: "flex",
-            gap: 4,
-          }}>
-            <button
-              onClick={() => dispatch({ type: "UNDO" })}
-              disabled={!canUndo}
-              title="Undo (Ctrl+Z)"
-              style={{
-                width: 32,
-                height: 32,
-                background: canUndo ? "#1a2535" : "#111",
-                color: canUndo ? "#e0e0e0" : "#444",
-                border: "1px solid #2a3545",
-                borderRadius: 6,
-                fontSize: 14,
-                cursor: canUndo ? "pointer" : "default",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              ↩
-            </button>
-            <button
-              onClick={() => dispatch({ type: "REDO" })}
-              disabled={!canRedo}
-              title="Redo (Ctrl+Shift+Z)"
-              style={{
-                width: 32,
-                height: 32,
-                background: canRedo ? "#1a2535" : "#111",
-                color: canRedo ? "#e0e0e0" : "#444",
-                border: "1px solid #2a3545",
-                borderRadius: 6,
-                fontSize: 14,
-                cursor: canRedo ? "pointer" : "default",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              ↪
-            </button>
-          </div>
-        )}
       </div>
 
       {/* Right: Sidebar */}
@@ -224,6 +192,7 @@ export function BuildStep({ agents, theme, onThemeChange, onComplete, onBack }: 
         display: "flex",
         flexDirection: "column",
         overflow: "hidden",
+        minHeight: 0,
       }}>
         {/* Tabs */}
         <div style={{ display: "flex", borderBottom: "1px solid #1a2535" }}>
@@ -249,7 +218,7 @@ export function BuildStep({ agents, theme, onThemeChange, onComplete, onBack }: 
         </div>
 
         {/* Tab content */}
-        <div style={{ flex: 1, overflow: "auto", padding: 16 }}>
+        <div style={{ flex: 1, overflow: "auto", overscrollBehavior: "contain", padding: 16 }}>
           {sidebarTab === "rooms" && (
             <div>
               <PresetPalette onAdd={addRoom} onAddCustom={addCustomRoom} />
@@ -258,7 +227,9 @@ export function BuildStep({ agents, theme, onThemeChange, onComplete, onBack }: 
                   <h4 style={{ margin: "0 0 12px", fontSize: 13, color: "#999" }}>Selected Room</h4>
                   <p style={{ fontSize: 14, marginBottom: 8 }}>{selectedRoom.label}</p>
                   <p style={{ fontSize: 12, color: "#666", marginBottom: 12 }}>
-                    {selectedRoom.size[0]}x{selectedRoom.size[1]} at ({selectedRoom.position[0]}, {selectedRoom.position[1]})
+                    {selectedRoom.size[0].toFixed(1)}m × {selectedRoom.size[1].toFixed(1)}m
+                    {" · "}{(selectedRoom.size[0] * selectedRoom.size[1]).toFixed(1)} m²
+                    {" · "}({selectedRoom.position[0]}, {selectedRoom.position[1]})
                   </p>
                   {/* Per-room color picker */}
                   <div style={{ marginTop: 16, marginBottom: 16 }}>
@@ -270,6 +241,19 @@ export function BuildStep({ agents, theme, onThemeChange, onComplete, onBack }: 
                       defaultFloor={(THEME_COLORS[theme] ?? THEME_COLORS["neon-dark"]).background}
                       onChange={(colors) => {
                         dispatch({ type: "SET_ROOM_COLORS", roomId: selectedRoom.id, colors });
+                      }}
+                    />
+                  </div>
+
+                  {/* Per-room floor style picker */}
+                  <div style={{ marginBottom: 16 }}>
+                    <FloorStylePicker
+                      value={selectedRoom.floorStyle as FloorStyle | undefined}
+                      presetDefault={
+                        getFloorWall(selectedRoom.preset, theme)?.floorStyle ?? "solid"
+                      }
+                      onChange={(style) => {
+                        dispatch({ type: "SET_FLOOR_STYLE", roomId: selectedRoom.id, floorStyle: style });
                       }}
                     />
                   </div>
@@ -322,6 +306,7 @@ export function BuildStep({ agents, theme, onThemeChange, onComplete, onBack }: 
                 existingFurniture={(selectedRoom.furniture ?? []).map((f) => ({
                   geometry: f.geometry,
                   size: f.size,
+                  label: f.label,
                 }))}
                 onRemoveFurniture={(idx) => {
                   dispatch({ type: "REMOVE_FURNITURE", roomId: selectedRoom.id, furnitureIndex: idx });
@@ -337,6 +322,16 @@ export function BuildStep({ agents, theme, onThemeChange, onComplete, onBack }: 
             )
           )}
         </div>
+
+        {/* Floor area summary */}
+        {rooms.length > 0 && (
+          <div style={{ padding: "8px 16px", borderTop: "1px solid #1a2535", display: "flex", justifyContent: "space-between", fontSize: 11, color: "#556" }}>
+            <span>{rooms.length} room{rooms.length !== 1 ? "s" : ""}</span>
+            <span style={{ color: "#8090c0" }}>
+              {rooms.reduce((s, r) => s + r.size[0] * r.size[1], 0).toFixed(0)} m² total
+            </span>
+          </div>
+        )}
 
         {/* Bottom actions */}
         <div style={{ padding: 16, borderTop: "1px solid #1a2535", display: "flex", gap: 8 }}>
@@ -373,6 +368,7 @@ export function BuildStep({ agents, theme, onThemeChange, onComplete, onBack }: 
             Continue to Launch
           </button>
         </div>
+      </div>
       </div>
     </div>
   );
