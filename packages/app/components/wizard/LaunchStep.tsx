@@ -4,16 +4,23 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { RoomConfig } from "@diorama/engine";
 
+interface AgentBehavior {
+  seat: string;
+  allowedRooms: string[];
+  energy: number;
+}
+
 interface LaunchStepProps {
   gatewayUrl: string;
   gatewayToken: string;
   theme: string;
   rooms: RoomConfig[];
   agentAssignments: Record<string, string>;
+  agentBehaviors: Record<string, AgentBehavior>;
   onBack: () => void;
 }
 
-export function LaunchStep({ gatewayUrl, gatewayToken, theme, rooms, agentAssignments, onBack }: LaunchStepProps) {
+export function LaunchStep({ gatewayUrl, gatewayToken, theme, rooms, agentAssignments, agentBehaviors, onBack }: LaunchStepProps) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -29,10 +36,20 @@ export function LaunchStep({ gatewayUrl, gatewayToken, theme, rooms, agentAssign
       theme,
       rooms,
       agents: Object.fromEntries(
-        Object.entries(agentAssignments).map(([agent, roomLabel]) => [
-          agent,
-          { desk: `${roomLabel.toLowerCase().replace(/\s+/g, "-")}-desk-1` },
-        ]),
+        Object.entries(agentAssignments).map(([agent, roomLabel]) => {
+          const behavior = agentBehaviors[agent];
+          return [
+            agent,
+            {
+              desk: `${roomLabel.toLowerCase().replace(/\s+/g, "-")}-desk-1`,
+              ...(behavior ? {
+                seat: behavior.seat,
+                allowedRooms: behavior.allowedRooms,
+                energy: behavior.energy,
+              } : {}),
+            },
+          ];
+        }),
       ),
     };
 

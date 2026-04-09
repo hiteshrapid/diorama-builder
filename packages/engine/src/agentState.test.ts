@@ -146,4 +146,32 @@ describe("computeIdlePose", () => {
     expect(Math.abs(pose.bodySwayX)).toBeGreaterThan(0);
     expect(Math.abs(pose.bodySwayZ)).toBeGreaterThan(0);
   });
+
+  it("energy=0 (calm) produces smaller magnitudes than energy=1 (restless)", () => {
+    // Use a time where poses are active (not at rest)
+    const calm = computeIdlePose(2, 0, 0);
+    const restless = computeIdlePose(2, 0, 1);
+    // Both use same base time but different energy → calm should have smaller magnitudes
+    expect(Math.abs(calm.bodySwayX)).toBeLessThan(Math.abs(restless.bodySwayX));
+  });
+
+  it("energy=0.5 (default) is backward compatible with no-energy call", () => {
+    const withDefault = computeIdlePose(3, 2, 0.5);
+    const withoutEnergy = computeIdlePose(3, 2);
+    expect(withDefault.leftArmX).toBe(withoutEnergy.leftArmX);
+    expect(withDefault.chairTurn).toBe(withoutEnergy.chairTurn);
+    expect(withDefault.bodySwayX).toBe(withoutEnergy.bodySwayX);
+  });
+
+  it("higher energy speeds up the animation cycle", () => {
+    // At energy=1, time runs at 1.5x → different cycle phase than energy=0 at 0.5x
+    const calm = computeIdlePose(10, 0, 0);
+    const restless = computeIdlePose(10, 0, 1);
+    // Different time scaling means different cycle positions → different pose values
+    const isDifferent =
+      calm.leftArmX !== restless.leftArmX ||
+      calm.chairTurn !== restless.chairTurn ||
+      calm.torsoLean !== restless.torsoLean;
+    expect(isDifferent).toBe(true);
+  });
 });

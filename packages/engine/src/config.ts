@@ -32,6 +32,12 @@ const RoomSchema = z.object({
 
 const AgentAssignmentSchema = z.object({
   desk: z.string(),
+  /** Reference to a specific seat: "room-label::furniture-index" */
+  seat: z.string().optional(),
+  /** Room labels this agent can visit. Empty array = unrestricted (can go anywhere). */
+  allowedRooms: z.array(z.string()).default([]),
+  /** Energy level 0 (calm) to 1 (restless). Controls idle animation speed/intensity. */
+  energy: z.number().min(0).max(1).default(0.5),
   color: z.string().optional(),
 });
 

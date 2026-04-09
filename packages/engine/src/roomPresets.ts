@@ -24,10 +24,22 @@ export interface ThemeFloorWall {
   wallColor: string;
 }
 
+/** Relative door position within a room (fractions of room size). */
+export interface RelativeDoor {
+  /** Fraction of room width (0 = left edge, 1 = right edge). */
+  rx: number;
+  /** Fraction of room height (0 = top edge, 1 = bottom edge). */
+  ry: number;
+  /** Door facing direction: 0=north, 90=east, 180=south, 270=west. */
+  facing: number;
+}
+
 export interface RoomPreset {
   id: string;
   label: string;
   defaultSize: [number, number];
+  /** Default door positions (relative to room size). Used for pathfinding and wall cutouts. */
+  doors: RelativeDoor[];
   furnitureByTheme: Record<string, FurnitureItem[]>;
   floorWallByTheme: Record<string, ThemeFloorWall>;
 }
@@ -230,12 +242,15 @@ const labFloorWall: Record<string, ThemeFloorWall> = {
 
 // ---------- Presets ----------
 
+/** Default door: south wall center */
+const SOUTH_CENTER_DOOR: RelativeDoor[] = [{ rx: 0.5, ry: 1.0, facing: 180 }];
+
 export const ROOM_PRESETS: RoomPreset[] = [
-  { id: "meeting",   label: "Meeting Room",   defaultSize: [4, 3], furnitureByTheme: meetingFurniture,   floorWallByTheme: meetingFloorWall },
-  { id: "workspace", label: "Workspace",      defaultSize: [5, 4], furnitureByTheme: workspaceFurniture, floorWallByTheme: workspaceFloorWall },
-  { id: "private",   label: "Private Office", defaultSize: [2, 2], furnitureByTheme: privateFurniture,   floorWallByTheme: privateFloorWall },
-  { id: "social",    label: "Social Lounge",  defaultSize: [3, 3], furnitureByTheme: socialFurniture,    floorWallByTheme: socialFloorWall },
-  { id: "lab",       label: "Lab",            defaultSize: [4, 4], furnitureByTheme: labFurniture,       floorWallByTheme: labFloorWall },
+  { id: "meeting",   label: "Meeting Room",   defaultSize: [4, 3], doors: SOUTH_CENTER_DOOR, furnitureByTheme: meetingFurniture,   floorWallByTheme: meetingFloorWall },
+  { id: "workspace", label: "Workspace",      defaultSize: [5, 4], doors: SOUTH_CENTER_DOOR, furnitureByTheme: workspaceFurniture, floorWallByTheme: workspaceFloorWall },
+  { id: "private",   label: "Private Office", defaultSize: [2, 2], doors: SOUTH_CENTER_DOOR, furnitureByTheme: privateFurniture,   floorWallByTheme: privateFloorWall },
+  { id: "social",    label: "Social Lounge",  defaultSize: [3, 3], doors: [{ rx: 1.0, ry: 0.5, facing: 90 }], furnitureByTheme: socialFurniture,    floorWallByTheme: socialFloorWall },
+  { id: "lab",       label: "Lab",            defaultSize: [4, 4], doors: SOUTH_CENTER_DOOR, furnitureByTheme: labFurniture,       floorWallByTheme: labFloorWall },
 ];
 
 export function getPreset(id: string): RoomPreset | undefined {

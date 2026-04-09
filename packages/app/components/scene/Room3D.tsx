@@ -3,7 +3,7 @@
 import { useMemo, useCallback, useState, useEffect } from "react";
 import * as THREE from "three";
 import { Html } from "@react-three/drei";
-import { generateFloor, generateWalls, getFurniture, getFloorWall, drawFloorPattern, type RoomConfig, type FloorStyle } from "@diorama/engine";
+import { generateFloor, generateWalls, getFurniture, getFloorWall, getPreset, drawFloorPattern, type RoomConfig, type FloorStyle, type DoorConfig } from "@diorama/engine";
 import { RoomFurniture3D } from "./RoomFurniture3D";
 import type { ThreeEvent } from "@react-three/fiber";
 
@@ -64,11 +64,20 @@ export function Room3D({ room, accentColor, floorColor, themeId, selected, glowI
       color: effectiveFloor,
       glassWalls: true,
     };
+
+    // Resolve door configs from preset relative positions to absolute canvas coords
+    const preset = getPreset(room.preset);
+    const doors: DoorConfig[] = (preset?.doors ?? []).map((rd) => ({
+      x: rect.x + rd.rx * rect.w,
+      y: rect.y + rd.ry * rect.h,
+      facing: rd.facing,
+    }));
+
     return {
       floor: generateFloor(rect),
-      walls: generateWalls(rect, []),
+      walls: generateWalls(rect, doors),
     };
-  }, [room.position, room.size, effectiveFloor]);
+  }, [room.position, room.size, room.preset, effectiveFloor]);
 
   // If room has custom furniture, use it; otherwise fall back to preset defaults
   const furniture = useMemo(

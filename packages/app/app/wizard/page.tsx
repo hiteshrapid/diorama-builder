@@ -3,6 +3,7 @@
 import { useState } from "react";
 import dynamic from "next/dynamic";
 import { ConnectStep } from "@/components/wizard/ConnectStep";
+import { AgentBehaviorStep, type AgentBehavior } from "@/components/wizard/AgentBehaviorStep";
 import { LaunchStep } from "@/components/wizard/LaunchStep";
 import type { RoomConfig } from "@diorama/engine";
 
@@ -11,9 +12,9 @@ const BuildStep = dynamic(
   { ssr: false, loading: () => <p style={{ color: "#888" }}>Loading builder...</p> },
 );
 
-type Step = 1 | 2 | 3;
+type Step = 1 | 2 | 3 | 4;
 
-const STEP_LABELS = ["Connect", "Build Your Office", "Launch"];
+const STEP_LABELS = ["Connect", "Build Your Office", "Configure Agents", "Launch"];
 
 interface WizardState {
   gatewayUrl: string;
@@ -23,6 +24,7 @@ interface WizardState {
   theme: string;
   rooms: RoomConfig[];
   agentAssignments: Record<string, string>;
+  agentBehaviors: Record<string, AgentBehavior>;
 }
 
 export default function WizardPage() {
@@ -35,6 +37,7 @@ export default function WizardPage() {
     theme: "neon-dark",
     rooms: [],
     agentAssignments: {},
+    agentBehaviors: {},
   });
 
   return (
@@ -110,13 +113,29 @@ export default function WizardPage() {
 
         {step === 3 && (
           <div style={{ display: "flex", justifyContent: "center", padding: "48px 24px" }}>
+            <AgentBehaviorStep
+              agents={state.agents}
+              rooms={state.rooms}
+              initialBehaviors={state.agentBehaviors}
+              onComplete={(agentBehaviors) => {
+                setState((s) => ({ ...s, agentBehaviors }));
+                setStep(4);
+              }}
+              onBack={() => setStep(2)}
+            />
+          </div>
+        )}
+
+        {step === 4 && (
+          <div style={{ display: "flex", justifyContent: "center", padding: "48px 24px" }}>
             <LaunchStep
               gatewayUrl={state.gatewayUrl}
               gatewayToken={state.gatewayToken}
               theme={state.theme}
               rooms={state.rooms}
               agentAssignments={state.agentAssignments}
-              onBack={() => setStep(2)}
+              agentBehaviors={state.agentBehaviors}
+              onBack={() => setStep(3)}
             />
           </div>
         )}

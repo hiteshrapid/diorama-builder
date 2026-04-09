@@ -10,9 +10,11 @@ interface AgentFigure3DProps {
   color: string;
   label: string;
   phase?: number;
+  /** Energy level 0 (calm) to 1 (restless). Controls idle animation speed/intensity. */
+  energy?: number;
 }
 
-export function AgentFigure3D({ state, color, label, phase = 0 }: AgentFigure3DProps) {
+export function AgentFigure3D({ state, color, label, phase = 0, energy = 0.5 }: AgentFigure3DProps) {
   const groupRef = useRef<Group>(null);
   const bodyRef = useRef<Group>(null);
 
@@ -25,7 +27,7 @@ export function AgentFigure3D({ state, color, label, phase = 0 }: AgentFigure3DP
 
     // Idle animation
     if (state.mode === "idle" || state.mode === "seated") {
-      const pose = computeIdlePose(clock.getElapsedTime(), phase);
+      const pose = computeIdlePose(clock.getElapsedTime(), phase, energy);
       if (bodyRef.current) {
         bodyRef.current.position.x = pose.bodySwayX;
         bodyRef.current.position.z = pose.bodySwayZ;

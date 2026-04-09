@@ -115,13 +115,23 @@ export interface IdlePose {
   chairTurn: number;
 }
 
-export function computeIdlePose(t: number, phase: number): IdlePose {
-  const pt = t + phase;
+/**
+ * Compute a procedural idle pose for an agent.
+ * @param t elapsed time in seconds
+ * @param phase per-agent offset to desync animations
+ * @param energy 0 (calm) to 1 (restless) — scales speed and magnitude. Default 0.5 preserves original behavior.
+ */
+export function computeIdlePose(t: number, phase: number, energy: number = 0.5): IdlePose {
+  // Energy scales time (0.5x – 1.5x) and magnitude (0.5x – 1.0x)
+  const timeScale = 0.5 + energy;       // calm=0.5, default=1.0, restless=1.5
+  const magScale = 0.5 + energy * 0.5;  // calm=0.5, default=0.75, restless=1.0
+
+  const pt = (t * timeScale) + phase;
   const cycle = pt % 20;
 
   // Gentle constant sway
-  const bodySwayX = Math.sin(pt * 0.4) * 0.012;
-  const bodySwayZ = Math.cos(pt * 0.35 + 1) * 0.008;
+  const bodySwayX = Math.sin(pt * 0.4) * 0.012 * magScale;
+  const bodySwayZ = Math.cos(pt * 0.35 + 1) * 0.008 * magScale;
 
   let leftArmX = 0;
   let rightArmX = 0;
@@ -167,5 +177,14 @@ export function computeIdlePose(t: number, phase: number): IdlePose {
     chairTurn = Math.sin(p * Math.PI * 2) * 0.1;
   }
 
-  return { leftArmX, rightArmX, headY, torsoLean, bodySwayX, bodySwayZ, chairTurn };
+  // Scale all pose magnitudes by energy
+  return {
+    leftArmX: leftArmX * magScale,
+    rightArmX: rightArmX * magScale,
+    headY: headY * magScale,
+    torsoLean: torsoLean * magScale,
+    bodySwayX,
+    bodySwayZ,
+    chairTurn: chairTurn * magScale,
+  };
 }

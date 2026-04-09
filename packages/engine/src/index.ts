@@ -53,7 +53,7 @@ export type { AutoLayoutResult } from "./autoLayout";
 
 // Room Presets
 export { ROOM_PRESETS, getPreset, getFurniture, getFloorWall } from "./roomPresets";
-export type { RoomPreset, FurnitureItem, ThemeId, ThemeFloorWall } from "./roomPresets";
+export type { RoomPreset, RelativeDoor, FurnitureItem, ThemeId, ThemeFloorWall } from "./roomPresets";
 
 // Furniture Catalog
 export {
@@ -63,6 +63,16 @@ export {
   catalogItemToFurniture,
 } from "./furnitureCatalog";
 export type { CatalogItem, FurnitureCategory } from "./furnitureCatalog";
+
+// Room Graph (pathfinding)
+export {
+  buildRoomGraph,
+  findRoomPath,
+  generateWaypoints,
+  findRoomContaining,
+  resolveRoomDoors,
+} from "./roomGraph";
+export type { RoomGraph, RoomNode, RoomEdge, DoorWorldPos } from "./roomGraph";
 
 // Floor Textures
 export {
