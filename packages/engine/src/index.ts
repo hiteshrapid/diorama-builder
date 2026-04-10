@@ -74,6 +74,14 @@ export {
 } from "./roomGraph";
 export type { RoomGraph, RoomNode, RoomEdge, DoorWorldPos } from "./roomGraph";
 
+// Activity State
+export {
+  deriveActivity,
+  formatEventLabel,
+  ACTIVITY_TIMEOUT_MS,
+} from "./activityState";
+export type { AgentActivity, ActivityRecord } from "./activityState";
+
 // Floor Textures
 export {
   FLOOR_STYLES,

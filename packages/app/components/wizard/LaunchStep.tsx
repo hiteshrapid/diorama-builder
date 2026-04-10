@@ -3,12 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { RoomConfig } from "@diorama/engine";
-
-interface AgentBehavior {
-  seat: string;
-  allowedRooms: string[];
-  energy: number;
-}
+import type { AgentBehavior } from "./AgentBehaviorStep";
 
 interface LaunchStepProps {
   gatewayUrl: string;

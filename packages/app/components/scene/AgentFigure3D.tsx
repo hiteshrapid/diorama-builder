@@ -2,7 +2,8 @@
 
 import { useRef } from "react";
 import { useFrame } from "@react-three/fiber";
-import { computeIdlePose, type AgentState } from "@diorama/engine";
+import { computeIdlePose, type AgentState, type AgentActivity } from "@diorama/engine";
+import { ActivityIndicator3D } from "./ActivityIndicator3D";
 import type { Group } from "three";
 
 interface AgentFigure3DProps {
@@ -12,9 +13,11 @@ interface AgentFigure3DProps {
   phase?: number;
   /** Energy level 0 (calm) to 1 (restless). Controls idle animation speed/intensity. */
   energy?: number;
+  /** Current activity for visual indicator above head. */
+  activity?: AgentActivity;
 }
 
-export function AgentFigure3D({ state, color, label, phase = 0, energy = 0.5 }: AgentFigure3DProps) {
+export function AgentFigure3D({ state, color, label, phase = 0, energy = 0.5, activity = "idle" }: AgentFigure3DProps) {
   const groupRef = useRef<Group>(null);
   const bodyRef = useRef<Group>(null);
 
@@ -41,6 +44,10 @@ export function AgentFigure3D({ state, color, label, phase = 0, energy = 0.5 }: 
 
   return (
     <group ref={groupRef}>
+      {/* Activity indicator + name label above head */}
+      <group position={[0, 1.5 + yOffset, 0]}>
+        <ActivityIndicator3D activity={activity} agentLabel={label} color={color} />
+      </group>
       <group ref={bodyRef} position={[0, yOffset, 0]}>
         {/* Body - capsule shape */}
         <mesh position={[0, 0.7, 0]}>

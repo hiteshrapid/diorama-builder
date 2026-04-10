@@ -8,11 +8,11 @@ npm workspaces — 5 packages under `packages/`:
 
 | Package | Path | Purpose |
 |---------|------|---------|
-| `@diorama/engine` | `packages/engine` | Core: config (Zod), plugin registry, event bus, geometry/coordinates, agent state, room presets (5 presets × 4 themes), auto-layout, furniture catalog (20 items), floor textures (5 styles) |
+| `@diorama/engine` | `packages/engine` | Core: config (Zod), plugin registry, event bus, geometry/coordinates, agent state, activity state, room graph/pathfinding, room presets (5 presets × 4 themes), auto-layout, furniture catalog (20 items), floor textures (5 styles) |
 | `@diorama/plugins` | `packages/plugins` | Source plugins (OpenClaw gateway w/ Ed25519, mock data), theme plugins (neon-dark, warm-office, cyberpunk, minimal) |
 | `@diorama/ui` | `packages/ui` | Builder store (reducer, 12 action types, undo/redo), config sync, room catalog |
 | `@diorama/cli` | `packages/cli` | Scaffolding (`diorama init`), templates (starter, full-office, minimal) |
-| `@diorama/app` | `packages/app` | Next.js 15 app: 3-step wizard, R3F 3D scene, builder sidebar, spatial editor |
+| `@diorama/app` | `packages/app` | Next.js 15 app: 4-step wizard, R3F 3D scene, builder sidebar, spatial editor |
 
 ## Tech Stack
 
@@ -26,7 +26,7 @@ npm workspaces — 5 packages under `packages/`:
 Node requirement: `/opt/homebrew/opt/node@22/bin/node` (system node may not work).
 
 ```bash
-# Run all tests (372+ across engine, plugins, ui, cli)
+# Run all tests (422+ across engine, plugins, ui, cli)
 /opt/homebrew/opt/node@22/bin/node node_modules/.bin/vitest run
 
 # Dev server (port 3456)
@@ -50,7 +50,8 @@ PATH="/opt/homebrew/bin:$PATH" npx next build
 ### Wizard Flow
 1. **Connect** — Gateway URL + token, or demo mode
 2. **Build Your Office** — Spatial editor (3D view) with sidebar (rooms, agents, theme, furniture tabs)
-3. **Launch** — Save config to `~/.diorama/config.json`
+3. **Configure Agents** — Seat assignment, allowed rooms, energy level per agent
+4. **Launch** — Save config to `~/.diorama/config.json`
 
 ### Scene (R3F)
 - `BuildStep.tsx` — Main component: manages state (useReducer), sidebar, toolbar (Select + undo/redo)
@@ -103,6 +104,13 @@ PATH="/opt/homebrew/bin:$PATH" npx next build
 - `packages/app/hooks/useResizeRoom.ts` — 8-handle resize
 - `packages/app/hooks/useFurniturePlacement.ts` — Click-to-place furniture
 - `packages/app/hooks/useAlignmentDetection.ts` — Alignment/snap detection
+- `packages/app/components/wizard/AgentBehaviorStep.tsx` — Wizard step 3: agent seat, room access, energy
+- `packages/app/components/LiveView.tsx` — Live 3D view with pathfinding-driven agent movement
+- `packages/engine/src/roomGraph.ts` — Room connectivity graph, BFS pathfinding, waypoint generation
+- `packages/engine/src/agentState.ts` — Agent state machine, energy-based idle pose
+- `packages/engine/src/activityState.ts` — Activity derivation (event type + room preset → visual activity)
+- `packages/app/components/scene/ActivityIndicator3D.tsx` — Activity icons + agent name labels above heads
+- `packages/app/components/ActivityFeed.tsx` — Rolling event log panel (bottom-left overlay)
 - `packages/engine/src/roomPresets.ts` — Preset definitions + furniture per theme
 - `packages/engine/src/furnitureCatalog.ts` — 20-item catalog (4 categories)
 - `packages/engine/src/floorTexture.ts` — 5 floor texture styles
@@ -129,3 +137,37 @@ Clicking empty space in the 3D scene now deselects the selected room. Previously
 - Added `onPointerDown` prop to `DragGroundPlane.tsx` that dispatches `SELECT_ROOM` with `null`
 - Optimized `builderReducer` SELECT_ROOM to short-circuit when selection unchanged (same state ref)
 - 3 new tests in `builderStore.test.ts`. Total: 378+.
+
+### 2026-04-09 — Agent Behavior System
+
+Added pathfinding, energy system, and agent behavior wizard step:
+
+- **Room graph & pathfinding** (`roomGraph.ts`) — Builds connectivity graph from room positions/doors, BFS shortest path, world-space waypoint generation for smooth agent movement between rooms
+- **Agent behavior wizard step** (`AgentBehaviorStep.tsx`) — New step 3: seat assignment (dropdown grouped by room), allowed-rooms checkboxes, energy slider (0=calm, 1=restless) per agent
+- **Wizard expanded** from 3 to 4 steps: Connect → Build → Configure Agents → Launch
+- **Agent state extended** (`agentState.ts`) — Energy field (0–1 float) drives idle animation speed/magnitude via `computeIdlePose()`
+- **LiveView enhanced** (`LiveView.tsx`) — Pathfinding-driven movement, energy-based idle animation, room access control
+- **Config schema extended** (`config.ts`) — `seat`, `allowedRooms`, `energy` fields added to agent config
+- Fixed `catalogItemToFurniture` rug rotation bug: `defaultRotation` now applied regardless of `glbPath`
+- Deduplicated `AgentBehavior` interface: `LaunchStep.tsx` imports from `AgentBehaviorStep.tsx`
+- Tests: 10 new pathfinding tests in `roomGraph.test.ts`, 6 new agent state tests. Total: 395+.
+
+### 2026-04-09 — Agent Activity Visualization
+
+Agents now show what they're doing, not just where they are. Activity is auto-derived from gateway events — no user mapping needed.
+
+- **Activity state engine** (`activityState.ts`) — Pure-function module: 8 activity types (idle, talking, working, testing, presenting, listening, sending, reviewing). `deriveActivity(eventType, roomPreset)` pattern-matches event type first, falls back to room preset semantics. `formatEventLabel()` generates human-readable feed labels.
+- **Activity indicators** (`ActivityIndicator3D.tsx`) — Html overlays above agent heads showing activity icon (speech bubble, microscope, satellite, etc.) with animated dots (talking/working) or CSS pulse (testing/sending), plus agent name label always visible.
+- **Activity feed** (`ActivityFeed.tsx`) — Rolling log panel (bottom-left) showing last 15 events with agent color dots, readable labels, and relative timestamps. Auto-scrolls, updates every second.
+- **LiveView wiring** — Activity derivation runs on every event regardless of pathfinding success. Activity timeout (8s) returns agents to idle. Random room fallback when event room names don't match config rooms (demo mode compatibility).
+- **AgentFigure3D** extended with `activity` prop to render `ActivityIndicator3D`.
+- Tests: 27 new activity state tests. Total: 422+.
+
+### 2026-04-09 — Live View Fix (Camera + Auto-Seating)
+
+Fixed the live view (post-wizard `/` page) which was completely broken — camera pointed at origin while rooms rendered elsewhere, agents spawned at wrong coordinates.
+
+- **DioramaScene** (`DioramaScene.tsx`) — Added `center` prop and `CameraSync` component (same pattern as `BuildStep3D.tsx`). Camera dynamically positions at `[centerX, 20, centerZ + 15]` looking at room centroid. Falls back to default position when no center provided.
+- **LiveView rewrite** (`LiveView.tsx`) — Calculates `roomsCenter` from config rooms using `toWorld()` (same as wizard). Passes center to DioramaScene. Agents auto-seat in chairs: builds seat pool from room furniture, assigns round-robin, places at chair world positions with `mode: "seated"`. Overflow agents stand near room center.
+- **Stripped pathfinding from events** — Agents stay seated. Events trigger activity indicators + room glow + feed entries only. No walking/movement complexity.
+- **Removed imports**: `buildRoomGraph`, `findRoomPath`, `generateWaypoints`, `findRoomContaining`, `updateAgentState`.

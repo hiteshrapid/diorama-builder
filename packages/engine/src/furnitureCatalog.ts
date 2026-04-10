@@ -105,7 +105,7 @@ export function catalogItemToFurniture(
     geometry: item.geometry,
     size: [...item.defaultSize],
     position: [position[0], y, position[2]],
-    ...(item.defaultRotation && !item.glbPath ? { rotation: [...item.defaultRotation] } : {}),
+    ...(item.defaultRotation ? { rotation: [...item.defaultRotation] } : {}),
     label: item.label,
     material: { ...item.defaultMaterial },
     ...(item.glbPath ? { glbPath: item.glbPath, glbScale: item.glbScale } : {}),

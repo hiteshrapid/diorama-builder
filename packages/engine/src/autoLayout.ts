@@ -89,6 +89,8 @@ export function generateAutoLayout(
     const deskIndex = Math.floor(i / rooms.length) + 1;
     agentAssignments[agents[i]] = {
       desk: `${room.label.toLowerCase().replace(/\s+/g, "-")}-desk-${deskIndex}`,
+      allowedRooms: [],
+      energy: 0.5,
     };
   }
 
