@@ -249,4 +249,95 @@ describe("parseConfig", () => {
     const result = parseConfig(validConfig);
     expect(result.rooms[0].floorStyle).toBeUndefined();
   });
+
+  describe("events.mappings", () => {
+    it("parses config without events field (backward compat)", () => {
+      const result = parseConfig(validConfig);
+      expect(result.events).toBeUndefined();
+    });
+
+    it("parses config with empty events.mappings", () => {
+      const config = { ...validConfig, events: { mappings: [] } };
+      const result = parseConfig(config);
+      expect(result.events?.mappings).toEqual([]);
+    });
+
+    it("parses event mapping with type only", () => {
+      const config = {
+        ...validConfig,
+        events: { mappings: [{ type: "advisor.opinion.submitted" }] },
+      };
+      const result = parseConfig(config);
+      expect(result.events?.mappings).toHaveLength(1);
+      expect(result.events?.mappings[0].type).toBe("advisor.opinion.submitted");
+      expect(result.events?.mappings[0].visual).toBeUndefined();
+    });
+
+    it("parses event mapping with visual override", () => {
+      const config = {
+        ...validConfig,
+        events: {
+          mappings: [{ type: "foo.bar", visual: "talking" }],
+        },
+      };
+      const result = parseConfig(config);
+      expect(result.events?.mappings[0].visual).toBe("talking");
+    });
+
+    it("parses event mapping with room override", () => {
+      const config = {
+        ...validConfig,
+        events: {
+          mappings: [{ type: "foo.bar", room: "Strategy Room" }],
+        },
+      };
+      const result = parseConfig(config);
+      expect(result.events?.mappings[0].room).toBe("Strategy Room");
+    });
+
+    it("accepts all valid visual values", () => {
+      const visuals = [
+        "idle",
+        "talking",
+        "working",
+        "testing",
+        "presenting",
+        "listening",
+        "sending",
+        "reviewing",
+      ];
+      const config = {
+        ...validConfig,
+        events: {
+          mappings: visuals.map((v) => ({ type: `evt.${v}`, visual: v })),
+        },
+      };
+      const result = parseConfig(config);
+      expect(result.events?.mappings).toHaveLength(visuals.length);
+    });
+
+    it("rejects invalid visual value", () => {
+      const config = {
+        ...validConfig,
+        events: {
+          mappings: [{ type: "foo.bar", visual: "dancing" }],
+        },
+      };
+      expect(() => parseConfig(config)).toThrow(DioramaConfigError);
+    });
+
+    it("rejects mapping missing required type", () => {
+      const config = {
+        ...validConfig,
+        events: { mappings: [{ visual: "talking" }] },
+      };
+      expect(() => parseConfig(config)).toThrow(DioramaConfigError);
+    });
+
+    it("defaults mappings to [] when events present but mappings omitted", () => {
+      const config = { ...validConfig, events: {} };
+      const result = parseConfig(config);
+      expect(result.events?.mappings).toEqual([]);
+    });
+  });
 });

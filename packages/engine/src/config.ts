@@ -46,6 +46,28 @@ const GatewaySchema = z.object({
   token: z.string().optional(),
 });
 
+// Kept in sync with AgentActivity in ./activityState.ts
+const EventVisualSchema = z.enum([
+  "idle",
+  "talking",
+  "working",
+  "testing",
+  "presenting",
+  "listening",
+  "sending",
+  "reviewing",
+]);
+
+const EventMappingSchema = z.object({
+  type: z.string(),
+  visual: EventVisualSchema.optional(),
+  room: z.string().optional(),
+});
+
+const EventsConfigSchema = z.object({
+  mappings: z.array(EventMappingSchema).default([]),
+});
+
 const DioramaConfigSchema = z.object({
   name: z.string(),
   gateway: GatewaySchema,
@@ -53,12 +75,16 @@ const DioramaConfigSchema = z.object({
   theme: z.string().default("neon-dark"),
   rooms: z.array(RoomSchema).default([]),
   agents: z.record(z.string(), AgentAssignmentSchema).default({}),
+  events: EventsConfigSchema.optional(),
 });
 
 export type DioramaConfig = z.infer<typeof DioramaConfigSchema>;
 export type RoomConfig = z.infer<typeof RoomSchema>;
 export type RoomColors = z.infer<typeof RoomColorsSchema>;
 export type AgentAssignment = z.infer<typeof AgentAssignmentSchema>;
+export type EventMapping = z.infer<typeof EventMappingSchema>;
+export type EventsConfig = z.infer<typeof EventsConfigSchema>;
+export type EventVisual = z.infer<typeof EventVisualSchema>;
 
 export class DioramaConfigError extends Error {
   constructor(message: string) {

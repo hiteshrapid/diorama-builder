@@ -1,0 +1,6 @@
+{
+  "name": "diorama",
+  "version": "0.1.0",
+  "description": "AI-powered 3D office visualizer for agent workflows. Turns OpenClaw agent codebases into a live 3D diorama in one command.",
+  "author": "hitesh@ruh.ai"
+}

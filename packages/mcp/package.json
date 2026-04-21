@@ -1,0 +1,19 @@
+{
+  "name": "@diorama/mcp",
+  "version": "0.1.0",
+  "type": "module",
+  "bin": {
+    "diorama-mcp": "src/bin.ts"
+  },
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "build": "tsc --build",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@diorama/cli": "*",
+    "@diorama/engine": "*",
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  }
+}

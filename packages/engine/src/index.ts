@@ -1,6 +1,18 @@
 // Config
 export { parseConfig, DioramaConfigError } from "./config";
-export type { DioramaConfig, RoomConfig, RoomColors, AgentAssignment } from "./config";
+export type {
+  DioramaConfig,
+  RoomConfig,
+  RoomColors,
+  AgentAssignment,
+  EventMapping,
+  EventsConfig,
+  EventVisual,
+} from "./config";
+
+// Broadcaster
+export { EventBroadcaster, getGlobalBroadcaster } from "./broadcaster";
+export type { BroadcastSender } from "./broadcaster";
 
 // Plugins
 export {

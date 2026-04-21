@@ -11,7 +11,8 @@
     "test:watch": "vitest",
     "typecheck": "tsc --build",
     "lint": "eslint packages/",
-    "build": "npm run build --workspaces"
+    "build": "tsc --build",
+    "prepare": "tsc --build"
   },
   "devDependencies": {
     "@types/ws": "^8.18.1",

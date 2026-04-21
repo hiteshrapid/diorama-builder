@@ -56,6 +56,7 @@ export function LaunchStep({ gatewayUrl, gatewayToken, theme, rooms, agentAssign
       });
 
       if (!res.ok) throw new Error("Failed to save config");
+      await fetch("/api/setup/continue", { method: "POST" }).catch(() => {});
       router.replace("/");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");

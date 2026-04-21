@@ -6,6 +6,7 @@ import { Room3D } from "./scene/Room3D";
 import { AgentFigure3D } from "./scene/AgentFigure3D";
 import { useGatewayEvents } from "@/hooks/useGatewayEvents";
 import { useMockEventSource } from "@/hooks/useMockEventSource";
+import { useDioramaEvents } from "@/hooks/useDioramaEvents";
 import {
   createAgentState,
   toWorld,
@@ -77,6 +78,7 @@ interface LiveViewProps {
 
 export function LiveView({ config, onSelectRoom, selectedRoom }: LiveViewProps) {
   const { eventBus, status, connect } = useGatewayEvents();
+  useDioramaEvents(eventBus);
   const colors = THEME_COLORS[config.theme] ?? THEME_COLORS["neon-dark"];
 
   // Track room glow intensity (event pulse)

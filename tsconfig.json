@@ -20,14 +20,20 @@
       "@diorama/plugins": ["packages/plugins/src"],
       "@diorama/cli": ["packages/cli/src"],
       "@diorama/ui": ["packages/ui/src"],
-      "@diorama/app": ["packages/app"]
+      "@diorama/app": ["packages/app"],
+      "@diorama/client": ["packages/client/src"],
+      "@diorama/mcp": ["packages/mcp/src"],
+      "@diorama/setup": ["packages/setup/src"]
     }
   },
+  "files": [],
   "references": [
     { "path": "packages/engine" },
     { "path": "packages/plugins" },
     { "path": "packages/cli" },
     { "path": "packages/ui" },
-    { "path": "packages/app" }
+    { "path": "packages/client" },
+    { "path": "packages/mcp" },
+    { "path": "packages/setup" }
   ]
 }

@@ -12,6 +12,7 @@ import { RoomColorPicker } from "../builder/RoomColorPicker";
 import { FloorStylePicker } from "../builder/FloorStylePicker";
 import { FurnitureCatalogPanel } from "../builder/FurnitureCatalogPanel";
 import { useFurniturePlacement } from "../../hooks/useFurniturePlacement";
+import { colors, radii } from "../../lib/tokens";
 import {
   neonDarkTheme,
   warmOfficeTheme,
@@ -187,15 +188,15 @@ export function BuildStep({ agents, theme, onThemeChange, onComplete, onBack }: 
       {/* Right: Sidebar */}
       <div style={{
         width: 320,
-        background: "#0d1520",
-        borderLeft: "1px solid #1a2535",
+        background: colors.bg1,
+        borderLeft: `1px solid ${colors.border}`,
         display: "flex",
         flexDirection: "column",
         overflow: "hidden",
         minHeight: 0,
       }}>
         {/* Tabs */}
-        <div style={{ display: "flex", borderBottom: "1px solid #1a2535" }}>
+        <div style={{ display: "flex", borderBottom: `1px solid ${colors.border}` }}>
           {(["rooms", "agents", "theme", "furniture"] as const).map((tab) => (
             <button
               key={tab}
@@ -203,13 +204,14 @@ export function BuildStep({ agents, theme, onThemeChange, onComplete, onBack }: 
               style={{
                 flex: 1,
                 padding: "12px 0",
-                background: sidebarTab === tab ? "#1a2535" : "transparent",
+                background: sidebarTab === tab ? colors.bg2 : "transparent",
                 border: "none",
-                color: sidebarTab === tab ? "#e0e0e0" : "#666",
+                color: sidebarTab === tab ? colors.text : colors.textFaint,
                 fontSize: 12,
                 fontWeight: 600,
                 cursor: "pointer",
                 textTransform: "capitalize",
+                letterSpacing: 0.2,
               }}
             >
               {tab}
@@ -325,25 +327,25 @@ export function BuildStep({ agents, theme, onThemeChange, onComplete, onBack }: 
 
         {/* Floor area summary */}
         {rooms.length > 0 && (
-          <div style={{ padding: "8px 16px", borderTop: "1px solid #1a2535", display: "flex", justifyContent: "space-between", fontSize: 11, color: "#556" }}>
+          <div style={{ padding: "8px 16px", borderTop: `1px solid ${colors.border}`, display: "flex", justifyContent: "space-between", fontSize: 11, color: colors.textFaint }}>
             <span>{rooms.length} room{rooms.length !== 1 ? "s" : ""}</span>
-            <span style={{ color: "#8090c0" }}>
+            <span style={{ color: colors.textDim }}>
               {rooms.reduce((s, r) => s + r.size[0] * r.size[1], 0).toFixed(0)} m² total
             </span>
           </div>
         )}
 
         {/* Bottom actions */}
-        <div style={{ padding: 16, borderTop: "1px solid #1a2535", display: "flex", gap: 8 }}>
+        <div style={{ padding: 16, borderTop: `1px solid ${colors.border}`, display: "flex", gap: 8 }}>
           <button
             onClick={onBack}
             style={{
               flex: 1,
               padding: "10px 0",
               background: "transparent",
-              color: "#888",
-              border: "1px solid #333",
-              borderRadius: 6,
+              color: colors.textDim,
+              border: `1px solid ${colors.border}`,
+              borderRadius: radii.md,
               fontSize: 13,
               cursor: "pointer",
             }}
@@ -356,16 +358,16 @@ export function BuildStep({ agents, theme, onThemeChange, onComplete, onBack }: 
             style={{
               flex: 2,
               padding: "10px 0",
-              background: rooms.length > 0 ? "#8090c0" : "#333",
-              color: rooms.length > 0 ? "#fff" : "#666",
+              background: rooms.length > 0 ? colors.accent : colors.bg3,
+              color: rooms.length > 0 ? colors.accentText : colors.textFaint,
               border: "none",
-              borderRadius: 6,
+              borderRadius: radii.md,
               fontSize: 13,
               fontWeight: 600,
               cursor: rooms.length > 0 ? "pointer" : "default",
             }}
           >
-            Continue to Launch
+            Save &amp; Continue
           </button>
         </div>
       </div>

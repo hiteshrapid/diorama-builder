@@ -4,15 +4,18 @@ Configurable 3D workspace visualizer for OpenClaw. Users build spatial layouts f
 
 ## Monorepo Structure
 
-npm workspaces — 5 packages under `packages/`:
+npm workspaces — 8 packages under `packages/`:
 
 | Package | Path | Purpose |
 |---------|------|---------|
-| `@diorama/engine` | `packages/engine` | Core: config (Zod), plugin registry, event bus, geometry/coordinates, agent state, activity state, room graph/pathfinding, room presets (5 presets × 4 themes), auto-layout, furniture catalog (20 items), floor textures (5 styles) |
+| `@diorama/engine` | `packages/engine` | Core: config (Zod), plugin registry, event bus + global broadcaster, geometry, agent state, activity state, room graph/pathfinding, room presets, auto-layout, furniture catalog, floor textures |
 | `@diorama/plugins` | `packages/plugins` | Source plugins (OpenClaw gateway w/ Ed25519, mock data), theme plugins (neon-dark, warm-office, cyberpunk, minimal) |
 | `@diorama/ui` | `packages/ui` | Builder store (reducer, 12 action types, undo/redo), config sync, room catalog |
-| `@diorama/cli` | `packages/cli` | Scaffolding (`diorama init`), templates (starter, full-office, minimal) |
-| `@diorama/app` | `packages/app` | Next.js 15 app: 4-step wizard, R3F 3D scene, builder sidebar, spatial editor |
+| `@diorama/cli` | `packages/cli` | Scaffolding (`diorama init`), templates, `startServer()` extracted for reuse by MCP |
+| `@diorama/app` | `packages/app` | Next.js 15 app: wizard, R3F 3D scene, builder sidebar, spatial editor, event+config API routes |
+| `@diorama/mcp` | `packages/mcp` | MCP (Model Context Protocol) server — 6 tools: start, open_wizard, get_config, add_room, set_theme, emit_event. Stdio transport. Shares broadcaster w/ app |
+| `@diorama/client` | `packages/client` | Tiny runtime helper: `dioramaEmit({ type, room, agent, payload })` — fire-and-forget POST to `/api/events/emit`. User's agent code imports this |
+| `@diorama/setup` | `packages/setup` | Skill toolkit (pure Node): `scanOpenClawWorkspace`, `proposeEvents`, `registerMcpInOpenClaw`, session read/write |
 
 ## Tech Stack
 
@@ -26,7 +29,7 @@ npm workspaces — 5 packages under `packages/`:
 Node requirement: `/opt/homebrew/opt/node@22/bin/node` (system node may not work).
 
 ```bash
-# Run all tests (422+ across engine, plugins, ui, cli)
+# Run all tests (485+ across engine, plugins, ui, cli, mcp, setup, client)
 /opt/homebrew/opt/node@22/bin/node node_modules/.bin/vitest run
 
 # Dev server (port 3456)
@@ -36,8 +39,14 @@ PATH="/opt/homebrew/bin:$PATH" npx next dev -p 3456
 /opt/homebrew/opt/node@22/bin/node node_modules/.bin/tsc --project packages/engine/tsconfig.json --noEmit
 /opt/homebrew/opt/node@22/bin/node node_modules/.bin/tsc --project packages/app/tsconfig.json --noEmit
 
-# Build
+# Build all composite packages (required for MCP; `dist/bin.js` is what .mcp.json points to)
+/opt/homebrew/opt/node@22/bin/node node_modules/.bin/tsc --build
+
+# Build Next.js
 PATH="/opt/homebrew/bin:$PATH" npx next build
+
+# Install as a Claude Code plugin (from repo root)
+claude plugins install "$(pwd)"
 ```
 
 ## Architecture
@@ -81,9 +90,81 @@ PATH="/opt/homebrew/bin:$PATH" npx next build
 
 - All app components use `"use client"` directive
 - Inline styles throughout (no Tailwind, no CSS modules)
-- Dark theme: `#0d1520` backgrounds, `#1a2535` borders, `#8090c0` accents
+- Dark theme: layered surfaces from `packages/app/lib/tokens.ts` — `bg0: #0a1018` (page), `bg1: #0f1620` (sidebar/panels), `bg2: #1a2535` (active tab / hover), `bg3: #263143` (disabled). Borders `#1f2b3d`. Accent `#5b8def` reserved for primary CTAs.
 - Engine exports pure functions; React/Three.js code lives only in `packages/app`
-- Monospace font: `'SF Mono', 'Fira Code', monospace`
+- Type scale: `Inter` (body/headings, via `next/font/google`), `JetBrains Mono` (small labels, code). Both wired via CSS variables `--font-inter`, `--font-mono`
+
+## Plugin & MCP Integration
+
+Diorama is distributed as a **Claude Code plugin**. Top-level plugin files:
+
+- `.claude-plugin/plugin.json` — manifest
+- `commands/diorama.md` — `/diorama` slash command (delegates to skill)
+- `.mcp.json` — auto-registers the MCP server on plugin install (`node ${CLAUDE_PLUGIN_ROOT}/packages/mcp/dist/bin.js`)
+- `skills/diorama-setup/SKILL.md` — 11-step orchestration skill: launch builder → scan OpenClaw → interview → propose events → write integration code → register MCP → launch live view
+
+### MCP server (`packages/mcp`)
+
+Stdio transport via `@modelcontextprotocol/sdk` low-level `Server` pattern (sidesteps Zod version conflicts). 6 tools:
+
+| Tool | Purpose |
+|------|---------|
+| `diorama_start({ route })` | Spawn/ensure Next.js app running, open browser to `/builder`, `/live`, or `/` |
+| `diorama_open_wizard` | Shortcut for `/builder` |
+| `diorama_get_config({ waitForSave })` | Read `~/.diorama/config.json`; long-poll (up to 10m) for Save & Continue signal |
+| `diorama_add_room` | POST to `/api/config/rooms` |
+| `diorama_set_theme` | POST to `/api/config/theme` |
+| `diorama_emit_event` | POST to `/api/events/emit` (fan-out to live browser) |
+
+Lifecycle: first tool call runs `startServer()` (exported from `@diorama/cli`) in-process, stores PID + port in `~/.diorama/runtime.json`. Subsequent calls probe `/api/health` and reuse. Shared broadcaster singleton in `@diorama/engine` (`getGlobalBroadcaster()`) ensures MCP-emitted events and real gateway events fan out through the same WS pipe (`/api/events/stream`).
+
+### User-code integration (`@diorama/client`)
+
+Zero-dependency helper the user's agent code imports:
+
+```typescript
+import { dioramaEmit } from "@diorama/client";
+await dioramaEmit({ type: "reviewer.ticket.approved", room: "reviewer-room", agent: "reviewer", payload: {...} });
+```
+
+Fire-and-forget POST to `/api/events/emit` (URL configurable via `DIORAMA_URL`). Never throws — agents must not fail when Diorama is down.
+
+### Setup toolkit (`packages/setup`)
+
+Pure Node library the skill invokes via `node -e 'require("@diorama/setup/dist/index.js")...'`:
+
+- `scanOpenClawWorkspace(homeDir)` — reads `~/.openclaw/openclaw.json` + `workspace/` for agent list, MCP servers, `.md` files
+- `proposeEvents(scan, transcript)` — seeds one event proposal per agent using verb-to-visual map (`submit→sending`, `review→reviewing`, `test→testing`, etc.)
+- `registerMcpInOpenClaw(homeDir, name, entry)` — idempotent write of `mcp.servers.<name>` into the user's openclaw.json (shallow-equal check to avoid redundant writes)
+- `writeSetupSession`, `readSetupSession`, `clearSetupSession` — persist interview state to `~/.diorama/setup-session.json`
+
+### New API routes (for MCP control plane)
+
+- `POST /api/events/emit` — receives `DioramaEvent`, validates, hands off to global broadcaster
+- WS `/api/events/stream` — browser subscription, wired in `packages/cli/src/server.ts` upgrade handler alongside `/api/gateway/ws`
+- `POST /api/config/rooms` — append a room
+- `POST /api/config/theme` — update theme
+- `POST /api/config/mappings` — set `events.mappings` (user's approved list)
+- `POST /api/setup/continue` — save-done signal; `GET` returns `{ savedAt: number }` for MCP long-poll
+- `GET /api/health` — `{ ok: true, port, version }`
+
+### Shared config mutator (`packages/app/lib/configStore.ts`)
+
+All mutation routes go through `mutateConfig(fn)`:
+
+```typescript
+export function mutateConfig(mutator): MutateResult {
+  try {
+    const current = readRawConfig();
+    const next = mutator(current);
+    const parsed = parseConfig(next);
+    writeConfig(parsed);
+    return { ok: true, config: parsed };
+  } catch (err) { /* returns { ok: false, status, error } */ }
+}
+```
+
+Wraps the entire read-mutate-validate-write cycle in one try/catch. Validation failures return 400 (via `DioramaConfigError`), disk errors 500.
 
 ## Key Files
 
@@ -171,3 +252,42 @@ Fixed the live view (post-wizard `/` page) which was completely broken — camer
 - **LiveView rewrite** (`LiveView.tsx`) — Calculates `roomsCenter` from config rooms using `toWorld()` (same as wizard). Passes center to DioramaScene. Agents auto-seat in chairs: builds seat pool from room furniture, assigns round-robin, places at chair world positions with `mode: "seated"`. Overflow agents stand near room center.
 - **Stripped pathfinding from events** — Agents stay seated. Events trigger activity indicators + room glow + feed entries only. No walking/movement complexity.
 - **Removed imports**: `buildRoomGraph`, `findRoomPath`, `generateWaypoints`, `findRoomContaining`, `updateAgentState`.
+
+### 2026-04-21 — Claude Code Plugin + MCP (from CLI to `/diorama`)
+
+Diorama went from a standalone Next.js app to a **Claude Code plugin** that does the whole integration dance for the user. One `/diorama` command now: opens the builder, scans the user's OpenClaw workspace, interviews them, proposes events with file:line citations, writes the `dioramaEmit()` calls into their agent code via CC's Edit tool, registers itself in `~/.openclaw/openclaw.json`, and launches the live view.
+
+**Plugin scaffolding (top-level):**
+- `.claude-plugin/plugin.json` — manifest
+- `commands/diorama.md` — `/diorama` slash command
+- `.mcp.json` — auto-registers the MCP on install (`node ${CLAUDE_PLUGIN_ROOT}/packages/mcp/dist/bin.js`)
+- `skills/diorama-setup/SKILL.md` — 11-step orchestration skill
+
+**New packages:**
+- `@diorama/mcp` — Stdio MCP server using `@modelcontextprotocol/sdk` low-level `Server` pattern. 6 tools (`diorama_start`, `diorama_open_wizard`, `diorama_get_config` with long-poll `waitForSave`, `diorama_add_room`, `diorama_set_theme`, `diorama_emit_event`). Lifecycle in `lifecycle.ts` reuses `startServer()` from `@diorama/cli` in-process; stores PID+port in `~/.diorama/runtime.json` and reuses across invocations via `/api/health` probe.
+- `@diorama/client` — zero-dep `dioramaEmit()` fire-and-forget POST helper the user's agent code imports
+- `@diorama/setup` — pure Node library: `scanOpenClawWorkspace`, `proposeEvents` (verb→visual map), `registerMcpInOpenClaw` (idempotent shallow-equal mutator), setup session R/W
+
+**New API routes (`packages/app/app/api/`):**
+- `events/emit` POST, `events/stream` WS (wired in `packages/cli/src/server.ts` upgrade handler alongside `/api/gateway/ws`)
+- `config/rooms`, `config/theme`, `config/mappings` POST — all go through shared `mutateConfig()` in `packages/app/lib/configStore.ts`
+- `setup/continue` POST/GET — save-done signal + MCP long-poll target
+- `health` GET
+
+**Global broadcaster:** `getGlobalBroadcaster()` in `@diorama/engine` uses `globalThis.__dioramaBroadcaster` singleton so Next.js route handlers and the CLI's WS upgrade handler share one event bus. Live view's `useDioramaEvents` hook accepts the same external bus as `useGatewayEvents` to unify rendering.
+
+**Save & Continue handoff:** `LaunchStep.tsx` POSTs to `/api/setup/continue` after a successful `/api/config` save. The MCP's `diorama_get_config({ waitForSave: true })` polls `GET /api/setup/continue` every 1s until `savedAt >= startedAt`, then returns the saved config.
+
+**UI polish (Step 11):** New design tokens in `packages/app/lib/tokens.ts` (layered surfaces `bg0-bg3`, reserved `accent: #5b8def` for CTAs). `app/layout.tsx` wired with `next/font/google` for Inter + JetBrains Mono. `BuildStep.tsx` sidebar migrated off flat `#0d1520` onto layered tokens.
+
+**CLI refactor:** `startServer()` extracted from `packages/cli/src/bin.ts` into `packages/cli/src/server.ts` so MCP can reuse it in-process. CLI `bin.ts` gains `mcp` subcommand that delegates to `@diorama/mcp`.
+
+**Tests added:** 8 MCP tool shape tests, 28 setup tests (scanner/proposer/mutator/session), plus broadcaster + client tests. Total: 485+.
+
+**Shipping flow:**
+```bash
+npm install            # runs prepare → tsc --build → generates all dist/ including packages/mcp/dist/bin.js
+claude plugins install "$(pwd)"
+# in a new Claude Code session:
+> /diorama
+```
